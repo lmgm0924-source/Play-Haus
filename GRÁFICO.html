@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-[#f4f0ea]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pair It — Play-Haus</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Space Grotesk & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bauhaus-bg': '#f4f0ea',
+                        'bauhaus-black': '#121212',
+                        'bauhaus-red': '#d9381e',
+                        'bauhaus-yellow': '#f4aa1d',
+                        'bauhaus-blue': '#163f82',
+                        'bauhaus-cream': '#ebe5d8',
+                        'bauhaus-white': '#ffffff'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'display': ['Space Grotesk', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'bauhaus': '4px 4px 0px 0px #121212',
+                        'bauhaus-sm': '2px 2px 0px 0px #121212',
+                        'bauhaus-lg': '6px 6px 0px 0px #121212',
+                        'bauhaus-active': '1px 1px 0px 0px #121212',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f4f0ea;
+            color: #121212;
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Subtle grid background texture for Bauhaus aesthetic */
+        .bg-bauhaus-grid {
+            background-size: 24px 24px;
+            background-image: 
+                linear-gradient(to right, rgba(18, 18, 18, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(18, 18, 18, 0.04) 1px, transparent 1px);
+        }
+
+        /* 3D Card Flip engine */
+        .card-container {
+            perspective: 1000px;
+            -webkit-perspective: 1000px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+        }
+
+        .card-container.flipped .card-inner {
+            transform: rotateY(180deg);
+            -webkit-transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 0px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Face down (Back) */
+        .card-back {
+            transform: rotateY(0deg);
+            -webkit-transform: rotateY(0deg);
+            z-index: 2;
+        }
+
+        /* Face up (Front) with translateZ fix to avoid browser clipping */
+        .card-front {
+            transform: rotateY(180deg) translateZ(2px);
+            -webkit-transform: rotateY(180deg) translateZ(2px);
+            z-index: 1;
+        }
+
+        /* Match celebration pulse */
+        @keyframes matchPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .matched-anim {
+            animation: matchPulse 0.4s ease-out;
+        }
+
+        /* Screen transition logic */
+        .screen-fade {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        .screen-hidden {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            transform: translateY(12px);
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body class="min-h-screen w-full flex flex-col items-center justify-between bg-bauhaus-grid antialiased">
+
+    <div class="w-full max-w-md min-h-screen flex flex-col justify-between p-4 sm:p-5 relative overflow-hidden">
+        
+        <!-- HEADER (Shared Play-Haus branding) -->
+        <header class="w-full flex items-center justify-between border-b-2 border-bauhaus-black pb-3 pt-1 z-20">
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-bauhaus-red border border-bauhaus-black"></div>
+                <div class="w-4 h-4 rounded-full bg-bauhaus-yellow border border-bauhaus-black"></div>
+                <div class="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[14px] border-b-bauhaus-blue"></div>
+                <span class="font-display font-bold text-xs tracking-widest uppercase ml-1">Play-Haus</span>
+            </div>
+            
+            <button id="soundToggleBtn" aria-label="Toggle Audio" class="p-1.5 text-xs font-bold font-display border-2 border-bauhaus-black bg-white hover:bg-bauhaus-cream transition-colors flex items-center gap-1 shadow-bauhaus-sm active:translate-x-0.5 active:translate-y-0.5">
+                <svg id="soundIconOn" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                <svg id="soundIconOff" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+            </button>
+        </header>
+
+        <!-- INTRO SCREEN -->
+        <main id="introScreen" class="screen-fade flex-1 flex flex-col justify-between my-auto py-5 z-10 w-full">
+            <div class="flex flex-col items-start gap-3 sm:gap-4 my-auto">
+                <div class="inline-block bg-bauhaus-black text-white px-2.5 py-1 text-[11px] font-display tracking-widest uppercase font-bold">
+                    Taller de Memoria Visual
+                </div>
+
+                <div class="space-y-1">
+                    <h1 class="font-display text-5xl sm:text-6xl font-bold tracking-tight text-bauhaus-black leading-none">
+                        Pair It
+                    </h1>
+                    <p class="font-display text-xl sm:text-2xl font-bold text-bauhaus-red">
+                        Encuentra las parejas.
+                    </p>
+                </div>
+
+                <div class="w-full border-t-2 border-bauhaus-black my-1"></div>
+
+                <p class="text-sm sm:text-base text-bauhaus-black font-medium leading-relaxed">
+                    Observa, recuerda y encuentra los elementos que pertenecen juntos.
+                </p>
+
+                <!-- Editorial Graphic Hero Composition -->
+                <div class="w-full bg-white border-2 border-bauhaus-black p-4 shadow-bauhaus my-2 relative overflow-hidden flex justify-around items-center h-28">
+                    <!-- Sample Card 1 -->
+                    <div class="w-16 h-20 bg-[#ebe5d8] border-2 border-bauhaus-black flex items-center justify-center p-1 shadow-bauhaus-sm">
+                        <svg viewBox="0 0 100 120" class="w-full h-full">
+                            <rect x="0" y="0" width="100" height="120" fill="#ebe5d8"/>
+                            <rect x="25" y="15" width="50" height="90" fill="#121212"/>
+                            <circle cx="50" cy="50" r="28" fill="#d9381e"/>
+                            <circle cx="50" cy="50" r="12" fill="#f4aa1d"/>
+                        </svg>
+                    </div>
+
+                    <div class="text-xl font-display font-bold text-bauhaus-black">+</div>
+
+                    <!-- Sample Card 2 -->
+                    <div class="w-16 h-20 bg-[#ebe5d8] border-2 border-bauhaus-black flex items-center justify-center p-1 shadow-bauhaus-sm">
+                        <svg viewBox="0 0 100 120" class="w-full h-full">
+                            <rect x="0" y="0" width="100" height="120" fill="#ebe5d8"/>
+                            <rect x="25" y="15" width="50" height="90" fill="#121212"/>
+                            <circle cx="50" cy="50" r="28" fill="#d9381e"/>
+                            <circle cx="50" cy="50" r="12" fill="#f4aa1d"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button id="startBtn" class="w-full py-4 bg-bauhaus-yellow hover:bg-amber-400 text-bauhaus-black font-display font-bold text-lg sm:text-xl uppercase tracking-wider border-2 border-bauhaus-black shadow-bauhaus active:shadow-bauhaus-active active:translate-x-1 active:translate-y-1 transition-all">
+                    Empezar
+                </button>
+            </div>
+        </main>
+
+        <!-- GAME SCREEN -->
+        <main id="gameScreen" class="screen-fade screen-hidden flex-1 flex flex-col justify-between my-auto py-2 z-10 w-full">
+            <!-- Top Controls & Status Bar -->
+            <div class="w-full flex items-center justify-between bg-white border-2 border-bauhaus-black p-2.5 shadow-bauhaus mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="font-display font-bold text-xs uppercase tracking-wider text-bauhaus-black">Parejas:</span>
+                    <span id="pairsCounter" class="font-display font-bold text-sm sm:text-base px-2.5 py-0.5 bg-bauhaus-black text-white">0 / 8</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="font-display font-bold text-xs uppercase tracking-wider text-bauhaus-black">Intentos:</span>
+                    <span id="attemptsCounter" class="font-display font-bold text-xs sm:text-sm px-2.5 py-0.5 bg-bauhaus-cream border border-bauhaus-black">0</span>
+                </div>
+            </div>
+
+            <!-- Card Grid (4x4 portrait layout with large touch targets) -->
+            <div id="cardGrid" class="grid grid-cols-4 gap-2 sm:gap-2.5 w-full my-auto py-1">
+                <!-- Cards dynamically injected via JavaScript -->
+            </div>
+
+            <!-- Bottom instruction hint -->
+            <div class="text-center pt-2">
+                <p class="text-xs font-medium text-bauhaus-black/80 font-display uppercase tracking-wider">
+                    Toca las tarjetas para revelar la composición
+                </p>
+            </div>
+        </main>
+
+        <!-- COMPLETION SCREEN -->
+        <main id="completionScreen" class="screen-fade screen-hidden flex-1 flex flex-col justify-between my-auto py-5 z-10 w-full">
+            <div class="flex flex-col items-center text-center gap-4 my-auto">
+                
+                <!-- Bauhaus Victory Graphic Composition -->
+                <div class="relative w-28 h-28 my-1 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-bauhaus-yellow border-2 border-bauhaus-black rotate-6 shadow-bauhaus"></div>
+                    <div class="absolute inset-0 bg-bauhaus-red border-2 border-bauhaus-black -rotate-3"></div>
+                    <div class="relative z-10 w-20 h-20 rounded-full bg-bauhaus-blue border-2 border-bauhaus-black flex items-center justify-center text-white">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="square" stroke-linejoin="miter" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <span class="inline-block bg-bauhaus-black text-white px-3 py-1 text-xs font-display tracking-widest uppercase font-bold">
+                        ¡Completado!
+                    </span>
+                    <h2 class="font-display text-4xl sm:text-5xl font-bold text-bauhaus-black tracking-tight">
+                        ¡Encontraste todas!
+                    </h2>
+                </div>
+
+                <div class="w-full border-t-2 border-bauhaus-black my-1"></div>
+
+                <!-- Educational Design Message -->
+                <div class="bg-white border-2 border-bauhaus-black p-4 shadow-bauhaus text-left space-y-2">
+                    <p class="text-base sm:text-lg font-bold text-bauhaus-black leading-tight">
+                        En el diseño gráfico, una forma, un color o una letra también pueden comunicar.
+                    </p>
+                    <p class="text-xs text-bauhaus-black/80 leading-relaxed font-medium">
+                        Las composiciones visuales organizan elementos como escala, contraste y ritmo para transmitir significado sin depender únicamente de palabras.
+                    </p>
+                </div>
+
+                <!-- Stats summary -->
+                <div class="flex gap-4 text-xs font-display font-bold">
+                    <div class="bg-bauhaus-cream border border-bauhaus-black px-3 py-1.5 shadow-bauhaus-sm">
+                        Intentos totales: <span id="finalAttempts" class="text-bauhaus-red font-extrabold text-sm">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button id="restartBtn" class="w-full py-4 bg-bauhaus-red hover:bg-red-700 text-white font-display font-bold text-lg sm:text-xl uppercase tracking-wider border-2 border-bauhaus-black shadow-bauhaus active:shadow-bauhaus-active active:translate-x-1 active:translate-y-1 transition-all">
+                    Jugar de nuevo
+                </button>
+            </div>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="w-full border-t-2 border-bauhaus-black pt-3 mt-2 flex justify-between items-center text-[10px] font-display uppercase tracking-widest text-bauhaus-black/80">
+            <span>Play-Haus Studio</span>
+            <span>Bauhaus Game 03</span>
+        </footer>
+
+    </div>
+
+    <script>
+        /* ==========================================================================
+           AUDIO SYNTHESIZER (Web Audio API - No external files)
+           ========================================================================== */
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        this.ctx = new AudioContext();
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playFlip() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(280, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(560, this.ctx.currentTime + 0.08);
+                    
+                    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.08);
+                } catch(e){}
+            }
+
+            playMatch() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    // Primary major chord arpeggio
+                    [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+                        
+                        gain.gain.setValueAtTime(0.18, now + idx * 0.05);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.05 + 0.22);
+                        
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + idx * 0.05);
+                        osc.stop(now + idx * 0.05 + 0.22);
+                    });
+                } catch(e){}
+            }
+
+            playMismatch() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(175, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.16);
+                    
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.16);
+                } catch(e){}
+            }
+
+            playVictory() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    const now = this.ctx.currentTime;
+                    notes.forEach((freq, i) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(freq, now + i * 0.09);
+                        gain.gain.setValueAtTime(0.12, now + i * 0.09);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.09 + 0.28);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + i * 0.09);
+                        osc.stop(now + i * 0.09 + 0.28);
+                    });
+                } catch(e){}
+            }
+        }
+
+        /* ==========================================================================
+           GRAPHIC COMPOSITIONS DATABASE
+           8 high-contrast, distinct Bauhaus mini-posters built strictly with SVGs.
+           Exact 100x120 aspect ratio matching the card dimensions.
+           ========================================================================== */
+        const BAUHAUS_COMPOSITIONS = [
+            {
+                id: 'pair-1-red-circle-black-pillar',
+                name: 'Círculo Rojo y Columna Negra',
+                svg: `<svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="120" fill="#ebe5d8"/>
+                        <!-- Grid lines -->
+                        <line x1="20" y1="0" x2="20" y2="120" stroke="#121212" stroke-width="1" opacity="0.15"/>
+                        <line x1="80" y1="0" x2="80" y2="120" stroke="#121212" stroke-width="1" opacity="0.15"/>
+                        <!-- Main Pillar -->
+                        <rect x="26" y="15" width="48" height="90" fill="#121212"/>
+                        <!-- Overlapping Circle -->
+                        <circle cx="50" cy="52" r="28" fill="#d9381e" stroke="#121212" stroke-width="3"/>
+                        <!-- Yellow Center Accent -->
+                        <circle cx="50" cy="52" r="10" fill="#f4aa1d" stroke="#121212" stroke-width="2"/>
+                        <!-- Blue Accent Line -->
+                        <rect x="15" y="88" width="70" height="6" fill="#163f82"/>
+                      </svg>`
+            },
+            {
+                id: 'pair-2-blue-square-yellow-sun',
+                name: 'Cuadrado Azul y Sol Amarillo',
+                svg: `<svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="120" fill="#ebe5d8"/>
+                        <!-- Diagonal intersecting lines -->
+                        <line x1="10" y1="110" x2="90" y2="10" stroke="#121212" stroke-width="3"/>
+                        <!-- Yellow Circle -->
+                        <circle cx="62" cy="42" r="26" fill="#f4aa1d" stroke="#121212" stroke-width="3"/>
+                        <!-- Blue Square -->
+                        <rect x="18" y="45" width="46" height="46" fill="#163f82" stroke="#121212" stroke-width="3"/>
+                        <!-- Red Accent Bar -->
+                        <rect x="18" y="22" width="22" height="10" fill="#d9381e" stroke="#121212" stroke-width="2"/>
+                      </svg>`
+            },
+            {
+                id: 'pair-3-diagonal-bars-red-arch',
+                name: 'Barras Diagonales y Arco Rojo',
+                svg: `<svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="120" fill="#ebe5d8"/>
+                        <!-- Thick diagonal bar -->
+                        <polygon points="12,110 32,110 88,10 68,10" fill="#121212"/>
+                        <!-- Semicircle / Arch -->
+                        <path d="M 20 85 A 30 30 0 0 1 80 85 Z" fill="#d9381e" stroke="#121212" stroke-width="3"/>
+                        <!-- Yellow Circle -->
+                        <circle cx="50" cy="40" r="14" fill="#f4aa1d" stroke="#121212" stroke-width="2.5"/>
+                        <!-- Small Blue Square -->
+                        <rect x="15" y="20" width="16" height="16" fill="#163f82" stroke="#121212" stroke-width="2"/>
+                      </svg>`
+            },
+            {
+                id: 'pair-4-red-triangle-blue-base',
+                name: 'Triángulo Rojo y Base Azul',
+                svg: `<svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="120" fill="#ebe5d8"/>
+                        <!-- Blue Rectangle Base -->
+                        <rect x="15" y="65" width="70" height="38" fill="#163f82" stroke="#121212" stroke-width="3"/>
+                        <!-- Red Triangle -->
+                        <polygon points="50,15 85,75 15,75" fill="#d9381e" stroke="#121212" stroke-width="3"/>
+                        <!-- Black Circle Overlay -->
+                        <circle cx="50" cy="55" r="11" fill="#121212"/>
+                        <!-- Yellow Strip -->
+                        <rect x="30" y="88" width="40" height="6" fill="#f4aa1d"/>
+                      </svg>`
+            },
+            {
+                id: 'pair-5-concentric-arches-pillar',
+                name: 'Arcos Concéntricos',
+                svg: `<svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="120" fill="#ebe5d8"/>
+                        <!-- Concentric Arches -->
+                        <path d="M 12 95 A 38 38 0 0 1 88 95 Z" fill="#163f82" stroke="#121212" stroke-width="3"/>
+                        <path d="M 26 95 A 24 24 0 0 1 74 95 Z" fill="#d9381e" stroke="#121212" stroke-width="3"/>
+                        <path d="M 40 95 A 10 10 0 0 1 60 95 Z" fill="#f4aa1d" stroke="#121212" stroke-width="2"/>
+                        <!-- Vertical Pillar Top -->
+                        <rect x="45" y="12" width="10" height="42" fill="#121212"/>
+                        <circle cx="50" cy="18" r="10" fill="#f4aa1d" stroke="#121212" stroke-width="2"/>
+                      </svg>`
+            },
+            {
+                id: 'pair-6-bauhaus-letter-a',
+                name: 'Composición Tipográfica A',
+                svg: `<svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="120" fill="#ebe5d8"/>
+                        <rect x="12" y="12" width="76" height="96" fill="#ffffff" stroke="#121212" stroke-width="3"/>
+                        <!-- Stencil Letter A -->
+                        <polygon points="50,22 22,92 40,92 50,65 60,92 78,92" fill="#121212"/>
+                        <!-- Red Crossbar -->
+                        <rect x="32" y="54" width="36" height="12" fill="#d9381e" stroke="#121212" stroke-width="2"/>
+                        <!-- Yellow Circle -->
+                        <circle cx="50" cy="38" r="7" fill="#f4aa1d"/>
+                      </svg>`
+            },
+            {
+                id: 'pair-7-overlapping-primary-forms',
+                name: 'Superposición de Primarios',
+                svg: `<svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="120" fill="#ebe5d8"/>
+                        <!-- Red Semicircle Left -->
+                        <path d="M 50 20 A 35 35 0 0 0 50 90 Z" fill="#d9381e" stroke="#121212" stroke-width="3"/>
+                        <!-- Yellow Semicircle Right -->
+                        <path d="M 50 20 A 35 35 0 0 1 50 90 Z" fill="#f4aa1d" stroke="#121212" stroke-width="3"/>
+                        <!-- Blue Square Center -->
+                        <rect x="35" y="38" width="30" height="34" fill="#163f82" stroke="#121212" stroke-width="2.5"/>
+                        <!-- Black Divider Line -->
+                        <line x1="50" y1="12" x2="50" y2="98" stroke="#121212" stroke-width="4"/>
+                      </svg>`
+            },
+            {
+                id: 'pair-8-modular-grid-composition',
+                name: 'Cuadrícula Modular',
+                svg: `<svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="120" fill="#ebe5d8"/>
+                        <!-- 4 Modular Quadrants -->
+                        <rect x="14" y="16" width="34" height="42" fill="#d9381e" stroke="#121212" stroke-width="3"/>
+                        <rect x="52" y="16" width="34" height="42" fill="#121212" stroke="#121212" stroke-width="3"/>
+                        <rect x="14" y="62" width="34" height="42" fill="#f4aa1d" stroke="#121212" stroke-width="3"/>
+                        <rect x="52" y="62" width="34" height="42" fill="#163f82" stroke="#121212" stroke-width="3"/>
+                        <!-- Center Circle Cutout Accent -->
+                        <circle cx="50" cy="60" r="16" fill="#ebe5d8" stroke="#121212" stroke-width="3"/>
+                        <circle cx="50" cy="60" r="6" fill="#121212"/>
+                      </svg>`
+            }
+        ];
+
+        /* Card Back SVG Pattern (Clean Bauhaus geometric stamp) */
+        const CARD_BACK_SVG = `
+            <svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100" height="120" fill="#f4f0ea"/>
+                <!-- Diagonal stripes texture -->
+                <pattern id="bauhausPattern" width="14" height="14" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                    <line x1="0" y1="0" x2="0" y2="14" stroke="#121212" stroke-width="2" opacity="0.12"/>
+                </pattern>
+                <rect width="100" height="120" fill="url(#bauhausPattern)" />
+                <!-- Outer Border Framing -->
+                <rect x="8" y="8" width="84" height="104" fill="none" stroke="#121212" stroke-width="2"/>
+                <!-- Central Emblem -->
+                <rect x="28" y="38" width="44" height="44" fill="#ebe5d8" stroke="#121212" stroke-width="2"/>
+                <circle cx="50" cy="60" r="14" fill="#d9381e" stroke="#121212" stroke-width="2"/>
+                <polygon points="50,50 57,66 43,66" fill="#f4aa1d" stroke="#121212" stroke-width="1.5"/>
+            </svg>
+        `;
+
+        /* ==========================================================================
+           GAME STATE & LOGIC
+           ========================================================================== */
+        const TOTAL_PAIRS = 8;
+        let cardsState = [];      // Cards state array
+        let flippedCards = [];    // Open cards indices [idx1, idx2]
+        let matchedPairs = 0;
+        let attemptsCount = 0;
+        let isProcessing = false; // Lock user actions during matching delays
+
+        const audio = new SoundEffects();
+
+        // DOM elements
+        const introScreen = document.getElementById('introScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const completionScreen = document.getElementById('completionScreen');
+        
+        const cardGrid = document.getElementById('cardGrid');
+        const pairsCounter = document.getElementById('pairsCounter');
+        const attemptsCounter = document.getElementById('attemptsCounter');
+        const finalAttempts = document.getElementById('finalAttempts');
+
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIconOn = document.getElementById('soundIconOn');
+        const soundIconOff = document.getElementById('soundIconOff');
+
+        function initGame() {
+            // Duplicate pairs to create 16 cards total
+            let deck = [];
+            BAUHAUS_COMPOSITIONS.forEach((item, index) => {
+                deck.push({ pairId: index, ...item });
+                deck.push({ pairId: index, ...item });
+            });
+
+            // Fisher-Yates Shuffle
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            // Create cards state array
+            cardsState = deck.map((item, index) => ({
+                id: index,
+                pairId: item.pairId,
+                svg: item.svg,
+                name: item.name,
+                isFlipped: false,
+                isMatched: false
+            }));
+
+            flippedCards = [];
+            matchedPairs = 0;
+            attemptsCount = 0;
+            isProcessing = false;
+
+            updateUI();
+            renderGrid();
+        }
+
+        function updateUI() {
+            pairsCounter.textContent = `${matchedPairs} / ${TOTAL_PAIRS}`;
+            attemptsCounter.textContent = attemptsCount;
+        }
+
+        function renderGrid() {
+            cardGrid.innerHTML = '';
+            
+            cardsState.forEach((card, index) => {
+                // Outer Card Wrapper with explicit 3:4 aspect ratio
+                const cardEl = document.createElement('div');
+                cardEl.className = `card-container aspect-[3/4] w-full cursor-pointer touch-manipulation select-none ${card.isFlipped ? 'flipped' : ''}`;
+                cardEl.dataset.id = index;
+
+                // Inner 3D Container with Bauhaus border & shadow
+                cardEl.innerHTML = `
+                    <div class="card-inner w-full h-full border-2 border-bauhaus-black shadow-bauhaus transition-transform duration-300">
+                        <!-- Card Back (Face down) -->
+                        <div class="card-back bg-bauhaus-cream p-1">
+                            ${CARD_BACK_SVG}
+                        </div>
+                        <!-- Card Front (Face up composition) -->
+                        <div class="card-front bg-white p-1">
+                            ${card.svg}
+                        </div>
+                    </div>
+                `;
+
+                // Single touch/click listener
+                cardEl.addEventListener('click', () => handleCardClick(index));
+
+                cardGrid.appendChild(cardEl);
+            });
+        }
+
+        function handleCardClick(index) {
+            audio.init(); // Ensure Web Audio context is active on touch
+
+            const card = cardsState[index];
+
+            // Guard against selection while processing, if card is already flipped, or already matched
+            if (isProcessing || card.isFlipped || card.isMatched) {
+                return;
+            }
+
+            // Flip current card
+            card.isFlipped = true;
+            flippedCards.push(index);
+            audio.playFlip();
+
+            // Update DOM element visual flip
+            const cardElement = cardGrid.children[index];
+            if (cardElement) {
+                cardElement.classList.add('flipped');
+            }
+
+            // Check when two cards are flipped
+            if (flippedCards.length === 2) {
+                attemptsCount++;
+                updateUI();
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            isProcessing = true;
+            const [firstIdx, secondIdx] = flippedCards;
+            const card1 = cardsState[firstIdx];
+            const card2 = cardsState[secondIdx];
+
+            if (card1.pairId === card2.pairId) {
+                // MATCH FOUND!
+                card1.isMatched = true;
+                card2.isMatched = true;
+                matchedPairs++;
+                updateUI();
+
+                setTimeout(() => {
+                    audio.playMatch();
+                    
+                    // Highlight animation
+                    const el1 = cardGrid.children[firstIdx];
+                    const el2 = cardGrid.children[secondIdx];
+                    if (el1) el1.classList.add('matched-anim');
+                    if (el2) el2.classList.add('matched-anim');
+
+                    flippedCards = [];
+                    isProcessing = false;
+
+                    // Check Game Completion
+                    if (matchedPairs === TOTAL_PAIRS) {
+                        setTimeout(handleGameCompletion, 600);
+                    }
+                }, 250);
+
+            } else {
+                // MISMATCH - FLIP BACK
+                setTimeout(() => {
+                    audio.playMismatch();
+
+                    card1.isFlipped = false;
+                    card2.isFlipped = false;
+
+                    const el1 = cardGrid.children[firstIdx];
+                    const el2 = cardGrid.children[secondIdx];
+                    if (el1) el1.classList.remove('flipped');
+                    if (el2) el2.classList.remove('flipped');
+
+                    flippedCards = [];
+                    isProcessing = false;
+                }, 850);
+            }
+        }
+
+        function handleGameCompletion() {
+            audio.playVictory();
+            finalAttempts.textContent = attemptsCount;
+
+            // Transition to completion screen
+            gameScreen.classList.add('screen-hidden');
+            completionScreen.classList.remove('screen-hidden');
+        }
+
+        function switchScreen(from, to) {
+            from.classList.add('screen-hidden');
+            to.classList.remove('screen-hidden');
+        }
+
+        // START BUTTON
+        startBtn.addEventListener('click', () => {
+            audio.init();
+            initGame();
+            switchScreen(introScreen, gameScreen);
+        });
+
+        // RESTART BUTTON
+        restartBtn.addEventListener('click', () => {
+            audio.init();
+            initGame();
+            switchScreen(completionScreen, gameScreen);
+        });
+
+        // SOUND TOGGLE BUTTON
+        soundToggleBtn.addEventListener('click', () => {
+            audio.muted = !audio.muted;
+            if (audio.muted) {
+                soundIconOn.classList.add('hidden');
+                soundIconOff.classList.remove('hidden');
+            } else {
+                soundIconOn.classList.remove('hidden');
+                soundIconOff.classList.add('hidden');
+            }
+        });
+
+        // Initialize state on window load
+        window.addEventListener('load', () => {
+            // Viewport ready
+        });
+    </script>
+</body>
+</html>

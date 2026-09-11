@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-[#f7f4ee] text-[#1a1a1a]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Move It — Play-Haus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bauhaus: {
+                            bg: '#f7f4ee',
+                            card: '#ffffff',
+                            dark: '#18181b',
+                            red: '#d9381e',
+                            blue: '#205493',
+                            yellow: '#f2a900',
+                            gray: '#e4dfd5',
+                            muted: '#8c857b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Space Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f4ee;
+            color: #18181b;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .mono-tag {
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* Subtle Grid Pattern for Stage Aesthetics */
+        .bg-bauhaus-grid {
+            background-size: 24px 24px;
+            background-image: 
+                linear-gradient(to right, rgba(24, 24, 27, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(24, 24, 27, 0.04) 1px, transparent 1px);
+        }
+
+        .slot-active {
+            border-color: #d9381e;
+            background-color: rgba(217, 56, 30, 0.03);
+        }
+
+        .figure-card {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .figure-card:active {
+            transform: scale(0.96);
+        }
+
+        .figure-selected {
+            ring: 3px solid #d9381e;
+            border-color: #d9381e;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(217, 56, 30, 0.25);
+        }
+
+        /* Drag ghost styling */
+        .dragging {
+            opacity: 0.4;
+            scale: 0.95;
+        }
+
+        /* Animation spotlight keyframes */
+        @keyframes spotlightPulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.98); }
+            50% { opacity: 0.7; transform: scale(1.02); }
+        }
+
+        .spotlight-active {
+            animation: spotlightPulse 0.8s ease-in-out infinite;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d9381e;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between overflow-x-hidden selection:bg-bauhaus-red selection:text-white">
+
+    <div id="app" class="min-h-screen w-full flex flex-col max-w-md mx-auto relative bg-bauhaus-bg border-x border-bauhaus-gray shadow-2xl">
+        
+        <!-- HEADER / BRANDING -->
+        <header class="p-4 pt-5 pb-3 border-b border-bauhaus-dark/10 flex items-center justify-between bg-bauhaus-bg/90 backdrop-blur sticky top-0 z-30">
+            <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 bg-bauhaus-red rounded-full"></div>
+                <div class="w-3 h-3 bg-bauhaus-yellow"></div>
+                <div class="w-3 h-3 bg-bauhaus-blue rounded-xs"></div>
+                <span class="mono-tag text-xs tracking-widest font-bold uppercase ml-1 text-bauhaus-dark">PLAY-HAUS</span>
+            </div>
+            <div class="mono-tag text-xs font-semibold tracking-wider px-2.5 py-1 bg-bauhaus-dark text-bauhaus-bg rounded-full" id="header-badge">
+                MOVE IT
+            </div>
+        </header>
+
+        <!-- MAIN DYNAMIC CONTENT AREA -->
+        <main class="flex-1 flex flex-col p-4 relative justify-between overflow-y-auto" id="main-content">
+            <!-- Screen content injected dynamically via JavaScript -->
+        </main>
+
+        <!-- FOOTER / CREDITS -->
+        <footer class="p-3 border-t border-bauhaus-dark/10 text-center mono-tag text-[10px] text-bauhaus-muted tracking-widest uppercase bg-bauhaus-bg">
+            Taller de Teatro Bauhaus — Geometría en Movimiento
+        </footer>
+    </div>
+
+    <!-- MODAL NOTIFICATION OVERLAY -->
+    <div id="modal-overlay" class="fixed inset-0 bg-bauhaus-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity duration-300">
+        <div class="bg-bauhaus-bg border-2 border-bauhaus-dark p-6 rounded-2xl max-w-xs w-full shadow-2xl transform transition-transform text-center space-y-4">
+            <div id="modal-icon" class="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-white text-xl font-bold bg-bauhaus-red">
+                ✓
+            </div>
+            <h3 id="modal-title" class="font-extrabold text-xl tracking-tight text-bauhaus-dark">
+                ¡Excelente!
+            </h3>
+            <p id="modal-message" class="text-sm text-bauhaus-dark/80 leading-relaxed font-medium">
+                Has ordenado correctamente la secuencia.
+            </p>
+            <button id="modal-btn" class="w-full py-3 px-6 bg-bauhaus-dark text-white font-bold rounded-xl tracking-wide uppercase text-sm hover:bg-bauhaus-red transition-colors active:scale-95 shadow-md">
+                Siguiente
+            </button>
+        </div>
+    </div>
+
+    <script>
+
+        // ==========================================
+        // GEOMETRIC POSE DEFINITIONS (SVG GRAPHICS)
+        // High visibility, unmistakable silhouettes
+        // ==========================================
+
+        const POSE_GRAPHICS = {
+            // ----- LEVEL 1: LEVANTA (Pick up object) -----
+            L1_1: {
+                id: 'L1_1',
+                step: 1,
+                name: 'De pie frente al objeto',
+                shortName: 'De pie',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <!-- Stage floor -->
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <!-- Head -->
+                    <circle cx="45" cy="22" r="10" fill="#d9381e"/>
+                    <!-- Torso -->
+                    <rect x="40" y="34" width="10" height="38" fill="#18181b" rx="2"/>
+                    <!-- Left Leg -->
+                    <line x1="42" y1="72" x2="40" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <!-- Right Leg -->
+                    <line x1="48" y1="72" x2="50" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <!-- Arms hanging at side -->
+                    <line x1="38" y1="36" x2="35" y2="70" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="52" y1="36" x2="55" y2="70" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <!-- Object on floor -->
+                    <rect x="70" y="101" width="14" height="14" fill="#f2a900" stroke="#18181b" stroke-width="2" rx="1"/>
+                </svg>`
+            },
+            L1_2: {
+                id: 'L1_2',
+                step: 2,
+                name: 'Inclinándose hacia el objeto',
+                shortName: 'Inclinación',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <!-- Head angled down -->
+                    <circle cx="62" cy="48" r="10" fill="#d9381e"/>
+                    <!-- Torso angled 45deg -->
+                    <line x1="38" y1="74" x2="56" y2="52" stroke="#18181b" stroke-width="12" stroke-linecap="round"/>
+                    <!-- Legs slightly bent -->
+                    <path d="M 38 74 L 32 94 L 30 114" fill="none" stroke="#18181b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M 40 74 L 42 94 L 44 114" fill="none" stroke="#18181b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Arms reaching down towards object -->
+                    <line x1="52" y1="56" x2="68" y2="92" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <!-- Object on floor -->
+                    <rect x="70" y="101" width="14" height="14" fill="#f2a900" stroke="#18181b" stroke-width="2" rx="1"/>
+                </svg>`
+            },
+            L1_3: {
+                id: 'L1_3',
+                step: 3,
+                name: 'Tomando el objeto del suelo',
+                shortName: 'Tomar objeto',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <!-- Head crouched low -->
+                    <circle cx="56" cy="74" r="10" fill="#d9381e"/>
+                    <!-- Torso deep bend horizontal -->
+                    <line x1="28" y1="84" x2="50" y2="78" stroke="#18181b" stroke-width="12" stroke-linecap="round"/>
+                    <!-- Legs deep crouch -->
+                    <path d="M 28 84 L 14 100 L 26 114" fill="none" stroke="#18181b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M 32 84 L 24 102 L 36 114" fill="none" stroke="#18181b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Arms grasping object directly -->
+                    <line x1="48" y1="80" x2="65" y2="102" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <!-- Object being grabbed -->
+                    <rect x="65" y="99" width="14" height="14" fill="#f2a900" stroke="#18181b" stroke-width="2" rx="1"/>
+                </svg>`
+            },
+            L1_4: {
+                id: 'L1_4',
+                step: 4,
+                name: 'De pie sosteniendo el objeto',
+                shortName: 'Sostener objeto',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <!-- Head -->
+                    <circle cx="45" cy="22" r="10" fill="#d9381e"/>
+                    <!-- Torso -->
+                    <rect x="40" y="34" width="10" height="38" fill="#18181b" rx="2"/>
+                    <!-- Left Leg -->
+                    <line x1="42" y1="72" x2="40" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <!-- Right Leg -->
+                    <line x1="48" y1="72" x2="50" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <!-- Arms bent holding object at chest -->
+                    <path d="M 40 40 L 58 48 L 50 56" fill="none" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <!-- Object held in hands -->
+                    <rect x="52" y="44" width="14" height="14" fill="#f2a900" stroke="#18181b" stroke-width="2" rx="1"/>
+                </svg>`
+            },
+
+            // ----- LEVEL 2: EN MOVIMIENTO (5 poses) -----
+            L2_1: {
+                id: 'L2_1',
+                step: 1,
+                name: 'Inicio en reposo',
+                shortName: 'Reposo',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <circle cx="35" cy="24" r="10" fill="#205493"/>
+                    <rect x="30" y="36" width="10" height="38" fill="#18181b" rx="2"/>
+                    <line x1="32" y1="74" x2="32" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="38" y1="74" x2="38" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="28" y1="38" x2="26" y2="70" stroke="#18181b" stroke-width="4"/>
+                    <line x1="42" y1="38" x2="44" y2="70" stroke="#18181b" stroke-width="4"/>
+                </svg>`
+            },
+            L2_2: {
+                id: 'L2_2',
+                step: 2,
+                name: 'Caminando a la derecha',
+                shortName: 'Marcha →',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <!-- Arrow direction -->
+                    <path d="M 65 15 L 80 15 M 74 10 L 80 15 L 74 20" stroke="#205493" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Head forward -->
+                    <circle cx="48" cy="25" r="10" fill="#205493"/>
+                    <!-- Torso slightly forward tilt -->
+                    <line x1="45" y1="36" x2="42" y2="72" stroke="#18181b" stroke-width="10" stroke-linecap="round"/>
+                    <!-- Legs stride (Left back, Right forward) -->
+                    <line x1="42" y1="72" x2="24" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="42" y1="72" x2="60" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <!-- Arms swing opposite -->
+                    <line x1="44" y1="40" x2="62" y2="60" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="44" y1="40" x2="26" y2="58" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                </svg>`
+            },
+            L2_3: {
+                id: 'L2_3',
+                step: 3,
+                name: 'Alcance e impulso frontal',
+                shortName: 'Alcance frontal',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <!-- Head forward high -->
+                    <circle cx="62" cy="28" r="10" fill="#205493"/>
+                    <!-- Torso lunging right -->
+                    <line x1="38" y1="70" x2="56" y2="38" stroke="#18181b" stroke-width="10" stroke-linecap="round"/>
+                    <!-- Leg lunge: Back extended, Front bent -->
+                    <line x1="38" y1="70" x2="16" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M 38 70 L 62 90 L 64 114" fill="none" stroke="#18181b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Right Arm High Reach forward -->
+                    <line x1="54" y1="40" x2="88" y2="28" stroke="#d9381e" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="54" y1="40" x2="30" y2="64" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                </svg>`
+            },
+            L2_4: {
+                id: 'L2_4',
+                step: 4,
+                name: 'Giro de 180°',
+                shortName: 'Giro 180°',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <!-- Rotation curve arrow -->
+                    <path d="M 28 20 A 18 18 0 1 1 72 20" fill="none" stroke="#f2a900" stroke-width="3" stroke-dasharray="3 2"/>
+                    <polygon points="72,15 78,22 70,24" fill="#f2a900"/>
+                    <!-- Head facing turning direction -->
+                    <circle cx="48" cy="28" r="10" fill="#205493"/>
+                    <!-- Torso centered upright -->
+                    <rect x="43" y="40" width="10" height="36" fill="#18181b" rx="2"/>
+                    <!-- Feet crossed pivoting -->
+                    <line x1="45" y1="76" x2="36" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="51" y1="76" x2="58" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <!-- Curved circular arm posture for turn -->
+                    <path d="M 22 50 Q 48 34 74 50" fill="none" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                </svg>`
+            },
+            L2_5: {
+                id: 'L2_5',
+                step: 5,
+                name: 'Caminata de retorno (Izquierda)',
+                shortName: 'Retorno ←',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <!-- Arrow direction back left -->
+                    <path d="M 35 15 L 20 15 M 26 10 L 20 15 L 26 20" stroke="#205493" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Head looking left -->
+                    <circle cx="42" cy="25" r="10" fill="#205493"/>
+                    <!-- Torso leaning left -->
+                    <line x1="45" y1="36" x2="48" y2="72" stroke="#18181b" stroke-width="10" stroke-linecap="round"/>
+                    <!-- Legs stride going LEFT -->
+                    <line x1="48" y1="72" x2="68" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="48" y1="72" x2="30" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <!-- Arms swing opposite -->
+                    <line x1="46" y1="40" x2="26" y2="60" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="46" y1="40" x2="64" y2="58" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                </svg>`
+            },
+
+            // ----- LEVEL 3: EN ESCENA (6 poses) -----
+            L3_1: {
+                id: 'L3_1',
+                step: 1,
+                name: 'Postura neutra inicial',
+                shortName: 'Inicio neutro',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <circle cx="50" cy="22" r="10" fill="#d9381e"/>
+                    <rect x="45" y="34" width="10" height="38" fill="#18181b" rx="2"/>
+                    <line x1="47" y1="72" x2="44" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="53" y1="72" x2="56" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="43" y1="36" x2="38" y2="70" stroke="#18181b" stroke-width="4"/>
+                    <line x1="57" y1="36" x2="62" y2="70" stroke="#18181b" stroke-width="4"/>
+                </svg>`
+            },
+            L3_2: {
+                id: 'L3_2',
+                step: 2,
+                name: 'Apertura de brazos',
+                shortName: 'Apertura',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <circle cx="50" cy="22" r="10" fill="#d9381e"/>
+                    <rect x="45" y="34" width="10" height="38" fill="#18181b" rx="2"/>
+                    <line x1="47" y1="72" x2="42" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="53" y1="72" x2="58" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <!-- Wide open horizontal arms -->
+                    <line x1="45" y1="40" x2="14" y2="40" stroke="#d9381e" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="55" y1="40" x2="86" y2="40" stroke="#d9381e" stroke-width="5" stroke-linecap="round"/>
+                </svg>`
+            },
+            L3_3: {
+                id: 'L3_3',
+                step: 3,
+                name: 'Giro con brazos diagonales',
+                shortName: 'Giro diagonal',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <circle cx="50" cy="22" r="10" fill="#d9381e"/>
+                    <line x1="50" y1="34" x2="50" y2="72" stroke="#18181b" stroke-width="10" stroke-linecap="round"/>
+                    <line x1="50" y1="72" x2="36" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="50" y1="72" x2="62" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M 50 40 Q 75 18 70 5" fill="none" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M 50 40 Q 25 55 20 75" fill="none" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                </svg>`
+            },
+            L3_4: {
+                id: 'L3_4',
+                step: 4,
+                name: 'Contracción replegada',
+                shortName: 'Contracción',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <circle cx="50" cy="65" r="10" fill="#d9381e"/>
+                    <circle cx="50" cy="82" r="18" fill="none" stroke="#18181b" stroke-width="8"/>
+                    <line x1="40" y1="94" x2="32" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="60" y1="94" x2="68" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M 36 75 C 24 85 24 95 44 98" fill="none" stroke="#18181b" stroke-width="4"/>
+                </svg>`
+            },
+            L3_5: {
+                id: 'L3_5',
+                step: 5,
+                name: 'Elevación vertical',
+                shortName: 'Elevación',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <circle cx="50" cy="18" r="10" fill="#d9381e"/>
+                    <rect x="46" y="30" width="8" height="44" fill="#18181b" rx="2"/>
+                    <line x1="47" y1="74" x2="46" y2="114" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="53" y1="74" x2="54" y2="114" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="44" y1="34" x2="38" y2="4" stroke="#d9381e" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="56" y1="34" x2="62" y2="4" stroke="#d9381e" stroke-width="4" stroke-linecap="round"/>
+                </svg>`
+            },
+            L3_6: {
+                id: 'L3_6',
+                step: 6,
+                name: 'Pose final teatral',
+                shortName: 'Pose final',
+                svg: `
+                <svg viewBox="0 0 100 130" class="w-full h-full">
+                    <line x1="10" y1="115" x2="90" y2="115" stroke="#18181b" stroke-width="2" stroke-dasharray="4 2"/>
+                    <circle cx="55" cy="22" r="10" fill="#d9381e"/>
+                    <line x1="38" y1="68" x2="52" y2="34" stroke="#18181b" stroke-width="10" stroke-linecap="round"/>
+                    <line x1="38" y1="68" x2="14" y2="114" stroke="#18181b" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M 38 68 L 68 88 L 84 114" fill="none" stroke="#18181b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="50" y1="38" x2="86" y2="16" stroke="#f2a900" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="46" y1="44" x2="18" y2="60" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
+                </svg>`
+            }
+        };
+
+        const LEVELS = [
+            {
+                number: 1,
+                title: "Levanta",
+                count: 4,
+                subtitle: "Ordena las figuras para mostrar el movimiento.",
+                hintText: "1º De pie → 2º Se inclina → 3º Toma el objeto → 4º Se levanta sosteniéndolo.",
+                poses: ['L1_1', 'L1_2', 'L1_3', 'L1_4'],
+                successMsg: "¡Bien! Ahora prueba con más movimiento."
+            },
+            {
+                number: 2,
+                title: "En movimiento",
+                count: 5,
+                subtitle: "Observa la dirección del desplazamiento y el giro.",
+                hintText: "1º De pie en reposo → 2º Marcha a la derecha → 3º Impulso/Alcance frontal → 4º Giro de 180° → 5º Regreso a la izquierda.",
+                poses: ['L2_1', 'L2_2', 'L2_3', 'L2_4', 'L2_5'],
+                successMsg: "¡Muy bien! Ahora llévalo a escena."
+            },
+            {
+                number: 3,
+                title: "En escena",
+                count: 6,
+                subtitle: "Construye una composición teatral completa.",
+                hintText: "1º Inicio neutro → 2º Apertura de brazos → 3º Giro diagonal → 4º Contracción → 5º Elevación vertical → 6º Pose final.",
+                poses: ['L3_1', 'L3_2', 'L3_3', 'L3_4', 'L3_5', 'L3_6'],
+                successMsg: "¡La escena está lista!"
+            }
+        ];
+
+        // ==========================================
+        // GAME STATE MANAGEMENT
+        // ==========================================
+        let gameState = {
+            currentLevelIdx: 0,
+            selectedPoseId: null, // For tap selection
+            slots: [],            // Array of poseIds placed in slots [0..count-1]
+            bank: [],             // Array of poseIds available in tray
+            isPlayingAnimation: false,
+            animationTimer: null
+        };
+
+        // Utility: Fisher-Yates Shuffle
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Initialize Level
+        function initLevel(levelIdx) {
+            gameState.currentLevelIdx = levelIdx;
+            gameState.selectedPoseId = null;
+            gameState.isPlayingAnimation = false;
+            if (gameState.animationTimer) clearInterval(gameState.animationTimer);
+
+            const level = LEVELS[levelIdx];
+            gameState.slots = new Array(level.count).fill(null);
+            
+            // Randomize bank items
+            let shuffled = shuffleArray(level.poses);
+            // Ensure bank is not accidentally already in correct order
+            let isIdentical = true;
+            for(let i=0; i<shuffled.length; i++) {
+                if (shuffled[i] !== level.poses[i]) {
+                    isIdentical = false;
+                    break;
+                }
+            }
+            if (isIdentical && shuffled.length > 1) {
+                // Swap first two to guarantee shuffle
+                [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+            }
+
+            gameState.bank = shuffled;
+            renderGameView();
+        }
+
+
+        // ==========================================
+        // RENDER VIEWS
+        // ==========================================
+
+        const mainContentEl = document.getElementById('main-content');
+        const headerBadgeEl = document.getElementById('header-badge');
+
+        // Render Intro Screen
+        function renderIntroView() {
+            headerBadgeEl.innerText = "MOVE IT";
+
+            mainContentEl.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between items-center py-4 text-center">
+                    
+                    <!-- TOP TITLE BLOCK -->
+                    <div class="space-y-2 mt-2">
+                        <span class="mono-tag text-xs font-bold tracking-widest text-bauhaus-red uppercase block">
+                            Taller de Teatro Bauhaus
+                        </span>
+                        <h1 class="text-4xl font-extrabold tracking-tight text-bauhaus-dark">
+                            Move It
+                        </h1>
+                        <p class="text-sm font-semibold tracking-wide text-bauhaus-muted">
+                            Pon el movimiento en escena.
+                        </p>
+                    </div>
+
+                    <!-- HERO ILLUSTRATION -->
+                    <div class="w-full my-6 p-6 bg-white border-2 border-bauhaus-dark rounded-2xl shadow-[6px_6px_0px_0px_#18181b] relative overflow-hidden bg-bauhaus-grid flex items-center justify-center">
+                        <div class="w-40 h-48 relative flex items-center justify-center">
+                            ${POSE_GRAPHICS.L3_6.svg}
+                        </div>
+                        <div class="absolute bottom-2 right-3 mono-tag text-[10px] text-bauhaus-muted tracking-widest uppercase">
+                            GEOMETRÍA Y CUERPO
+                        </div>
+                    </div>
+
+                    <!-- SUPPORTING DESCRIPTION -->
+                    <p class="text-sm text-bauhaus-dark/80 leading-relaxed font-medium px-2 max-w-xs mb-4">
+                        Ordena las figuras y descubre cómo una secuencia puede contar un movimiento.
+                    </p>
+
+                    <!-- START BUTTON -->
+                    <button onclick="startGame()" class="w-full py-4 px-8 bg-bauhaus-red text-white text-base font-extrabold rounded-xl tracking-wider uppercase shadow-[4px_4px_0px_0px_#18181b] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#18181b] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center space-x-2">
+                        <span>Empezar</span>
+                        <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
+                </div>
+            `;
+        }
+
+        // Render Main Gameplay Screen
+        function renderGameView() {
+            const level = LEVELS[gameState.currentLevelIdx];
+            headerBadgeEl.innerText = `NIVEL ${level.number} / ${LEVELS.length}`;
+
+            // Generate Slot Elements
+            let slotsHTML = '';
+            for (let i = 0; i < level.count; i++) {
+                const poseId = gameState.slots[i];
+                const isSelected = gameState.selectedPoseId && gameState.selectedPoseId.type === 'slot' && gameState.selectedPoseId.index === i;
+
+                slotsHTML += `
+                    <div 
+                        onclick="handleSlotClick(${i})"
+                        ondragover="handleDragOver(event)"
+                        ondrop="handleDrop(event, ${i})"
+                        class="relative flex-1 aspect-[3/4.2] max-w-[80px] border-2 ${isSelected ? 'border-bauhaus-red ring-2 ring-bauhaus-red' : 'border-bauhaus-dark/30'} bg-white rounded-xl flex flex-col items-center justify-between p-1 transition-all shadow-sm ${poseId ? 'cursor-pointer hover:border-bauhaus-dark' : 'border-dashed bg-bauhaus-bg/40'}"
+                        id="slot-${i}">
+                        
+                        <!-- Number Tag -->
+                        <span class="mono-tag text-[9px] font-bold text-bauhaus-muted self-start px-0.5">
+                            0${i + 1}
+                        </span>
+
+                        <!-- Pose content or placeholder -->
+                        <div class="w-full flex-1 flex flex-col items-center justify-center p-0.5 min-h-0">
+                            ${poseId ? `
+                                <div class="w-full h-full flex-1 min-h-0">${POSE_GRAPHICS[poseId].svg}</div>
+                                <span class="mono-tag text-[8px] font-bold text-bauhaus-dark text-center leading-none mt-0.5 truncate w-full">
+                                    ${POSE_GRAPHICS[poseId].shortName}
+                                </span>
+                            ` : '<div class="w-3 h-3 rounded-full bg-bauhaus-dark/10"></div>'}
+                        </div>
+
+                        <!-- Touch Indicator / Action -->
+                        ${poseId ? `
+                            <div class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-bauhaus-dark text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow z-10">
+                                ✕
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            // Generate Bank Figure Elements with Labels
+            let bankHTML = '';
+            gameState.bank.forEach((poseId) => {
+                const isSelected = gameState.selectedPoseId && gameState.selectedPoseId.type === 'bank' && gameState.selectedPoseId.id === poseId;
+
+                bankHTML += `
+                    <div 
+                        draggable="true"
+                        ondragstart="handleDragStart(event, '${poseId}')"
+                        onclick="handleBankClick('${poseId}')"
+                        class="figure-card min-w-[76px] w-20 h-28 bg-white border-2 ${isSelected ? 'figure-selected' : 'border-bauhaus-dark'} rounded-xl p-1 flex flex-col items-center justify-between cursor-pointer shadow-[3px_3px_0px_0px_#18181b] relative active:scale-95 touch-none flex-shrink-0"
+                        id="bank-card-${poseId}">
+                        <div class="w-full h-16 flex items-center justify-center">
+                            ${POSE_GRAPHICS[poseId].svg}
+                        </div>
+                        <span class="mono-tag text-[9px] font-bold text-bauhaus-dark text-center leading-tight bg-bauhaus-bg/80 w-full rounded py-0.5 px-0.5 border border-bauhaus-dark/10 truncate">
+                            ${POSE_GRAPHICS[poseId].shortName}
+                        </span>
+                    </div>
+                `;
+            });
+
+            const isAllPlaced = gameState.slots.every(s => s !== null);
+
+            mainContentEl.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between space-y-2">
+                    
+                    <!-- LEVEL TITLE & INSTRUCTION -->
+                    <div class="flex items-center justify-between border-b border-bauhaus-dark/10 pb-1.5">
+                        <div>
+                            <span class="mono-tag text-[10px] font-bold text-bauhaus-red uppercase tracking-wider block">
+                                Nivel ${level.number} de ${LEVELS.length}
+                            </span>
+                            <h2 class="text-xl font-extrabold tracking-tight text-bauhaus-dark leading-tight">
+                                ${level.title}
+                            </h2>
+                        </div>
+                        <p class="text-[11px] text-bauhaus-dark/70 font-medium text-right max-w-[140px] leading-tight">
+                            ${level.subtitle}
+                        </p>
+                    </div>
+
+                    <!-- STAGE SEQUENCE AREA -->
+                    <div class="w-full bg-white border-2 border-bauhaus-dark rounded-2xl p-2.5 shadow-[4px_4px_0px_0px_#18181b] bg-bauhaus-grid flex flex-col justify-between min-h-[195px]">
+                        
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="mono-tag text-[10px] font-bold text-bauhaus-dark uppercase tracking-wider flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-bauhaus-red inline-block mr-1.5"></span>
+                                Secuencia Teatral
+                            </span>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="showHintModal()" class="mono-tag text-[10px] bg-bauhaus-yellow text-bauhaus-dark px-2 py-0.5 rounded-full font-bold uppercase border border-bauhaus-dark shadow-xs hover:bg-yellow-400">
+                                    💡 Pista
+                                </button>
+                                <button onclick="clearSlots()" class="mono-tag text-[10px] text-bauhaus-muted hover:text-bauhaus-red font-semibold uppercase">
+                                    Limpiar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- SLOTS GRID -->
+                        <div class="flex items-center justify-between gap-1 w-full my-auto overflow-x-auto py-1">
+                            ${slotsHTML}
+                        </div>
+
+                        <div id="animation-indicator" class="mt-1 text-center mono-tag text-[10px] text-bauhaus-muted h-4 flex items-center justify-center">
+                            ${gameState.selectedPoseId ? 'Toca una casilla para colocar la figura' : 'Toca o arrastra las figuras a la secuencia'}
+                        </div>
+                    </div>
+
+                    <!-- AVAILABLE FIGURES TRAY -->
+                    <div class="flex-1 flex flex-col justify-end">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="mono-tag text-[10px] font-bold text-bauhaus-muted uppercase tracking-wider">
+                                Figuras Disponibles (${gameState.bank.length})
+                            </span>
+                            ${gameState.selectedPoseId ? `
+                                <span class="mono-tag text-[10px] text-bauhaus-red font-bold animate-pulse">
+                                    [ Figura Seleccionada ]
+                                </span>
+                            ` : ''}
+                        </div>
+
+                        <div class="min-h-[125px] bg-bauhaus-gray/40 border-2 border-bauhaus-dark/20 rounded-2xl p-2 flex items-center justify-start gap-2 overflow-x-auto">
+                            ${gameState.bank.length > 0 ? bankHTML : `
+                                <div class="w-full text-center text-xs font-semibold text-bauhaus-muted italic py-4">
+                                    Todas las figuras están en escena
+                                </div>
+                            `}
+                        </div>
+                    </div>
+
+                    <!-- CONTROLS FOOTER BUTTONS -->
+                    <div class="pt-1 grid grid-cols-2 gap-2">
+                        <button 
+                            onclick="playSequenceAnimation()" 
+                            ${!isAllPlaced ? 'disabled' : ''}
+                            class="py-3 px-3 bg-white border-2 border-bauhaus-dark text-bauhaus-dark font-bold text-xs rounded-xl tracking-wider uppercase shadow-[3px_3px_0px_0px_#18181b] disabled:opacity-40 disabled:shadow-none hover:bg-bauhaus-yellow transition-all flex items-center justify-center space-x-1.5">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <span>Reproducir</span>
+                        </button>
+
+                        <button 
+                            onclick="verifySequence()" 
+                            ${!isAllPlaced ? 'disabled' : ''}
+                            class="py-3 px-3 bg-bauhaus-dark text-white font-bold text-xs rounded-xl tracking-wider uppercase shadow-[3px_3px_0px_0px_#d9381e] disabled:opacity-40 disabled:shadow-none hover:bg-bauhaus-red transition-all flex items-center justify-center space-x-1.5">
+                            <svg class="w-4 h-4 stroke-current fill-none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                            <span>Verificar</span>
+                        </button>
+                    </div>
+
+                </div>
+            `;
+        }
+
+        // Render Completion Screen
+        function renderCompletionView() {
+            headerBadgeEl.innerText = "¡COMPLETADO!";
+
+            mainContentEl.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between items-center py-4 text-center">
+                    
+                    <div class="space-y-2 mt-1">
+                        <span class="mono-tag text-xs font-bold tracking-widest text-bauhaus-red uppercase block">
+                            Taller de Teatro Bauhaus
+                        </span>
+                        <h1 class="text-3xl font-extrabold tracking-tight text-bauhaus-dark">
+                            ¡La escena está lista!
+                        </h1>
+                        <p class="text-xs font-semibold tracking-wide text-bauhaus-muted px-4">
+                            En el teatro, el cuerpo también puede convertirse en una forma.
+                        </p>
+                    </div>
+
+                    <!-- FINAL ENSEMBLE THEATER STAGE DISPLAY -->
+                    <div class="w-full my-4 p-4 bg-white border-2 border-bauhaus-dark rounded-2xl shadow-[6px_6px_0px_0px_#18181b] bg-bauhaus-grid flex flex-col items-center justify-center relative overflow-hidden">
+                        
+                        <div class="grid grid-cols-3 gap-2 w-full my-2">
+                            <div class="w-full h-24 flex items-center justify-center">${POSE_GRAPHICS.L3_2.svg}</div>
+                            <div class="w-full h-24 flex items-center justify-center">${POSE_GRAPHICS.L3_5.svg}</div>
+                            <div class="w-full h-24 flex items-center justify-center">${POSE_GRAPHICS.L3_6.svg}</div>
+                        </div>
+
+                        <div class="w-full border-t border-bauhaus-dark/20 pt-2 flex items-center justify-between mono-tag text-[10px] text-bauhaus-dark font-bold">
+                            <span>Oskar Schlemmer</span>
+                            <span class="text-bauhaus-red">1922 — Play-Haus</span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-bauhaus-dark/80 leading-relaxed font-medium px-2 max-w-xs mb-3">
+                        Has explorado el movimiento, la geometría y la postura corporal a través del lenguaje visual del teatro Bauhaus.
+                    </p>
+
+                    <!-- RESTART BUTTON -->
+                    <button onclick="restartGame()" class="w-full py-4 px-8 bg-bauhaus-dark text-white text-base font-extrabold rounded-xl tracking-wider uppercase shadow-[4px_4px_0px_0px_#d9381e] hover:bg-bauhaus-red active:scale-98 transition-all flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5 fill-none stroke-current" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        <span>Jugar de nuevo</span>
+                    </button>
+                </div>
+            `;
+        }
+
+
+        // ==========================================
+        // INTERACTION HANDLERS (TOUCH & DRAG)
+        // ==========================================
+
+        function startGame() {
+            initLevel(0);
+        }
+
+        function restartGame() {
+            initLevel(0);
+        }
+
+        // Tap Bank Item
+        function handleBankClick(poseId) {
+            // If already selected, deselect
+            if (gameState.selectedPoseId && gameState.selectedPoseId.type === 'bank' && gameState.selectedPoseId.id === poseId) {
+                gameState.selectedPoseId = null;
+                renderGameView();
+                return;
+            }
+
+            // Find first empty slot
+            const emptyIdx = gameState.slots.findIndex(s => s === null);
+            if (emptyIdx !== -1) {
+                // Auto place into empty slot for super seamless tap experience
+                gameState.slots[emptyIdx] = poseId;
+                gameState.bank = gameState.bank.filter(id => id !== poseId);
+                gameState.selectedPoseId = null;
+            } else {
+                // Otherwise select it for swap/target tap
+                gameState.selectedPoseId = { type: 'bank', id: poseId };
+            }
+            renderGameView();
+        }
+
+        // Tap Slot Item
+        function handleSlotClick(slotIdx) {
+            const currentSlotPose = gameState.slots[slotIdx];
+
+            // Scenario 1: A bank item was selected, place it here
+            if (gameState.selectedPoseId && gameState.selectedPoseId.type === 'bank') {
+                const newPoseId = gameState.selectedPoseId.id;
+                
+                // If slot already has an item, return that item to bank
+                if (currentSlotPose) {
+                    gameState.bank.push(currentSlotPose);
+                }
+
+                gameState.slots[slotIdx] = newPoseId;
+                gameState.bank = gameState.bank.filter(id => id !== newPoseId);
+                gameState.selectedPoseId = null;
+                renderGameView();
+                return;
+            }
+
+            // Scenario 2: Tapping an occupied slot with no selection -> remove item back to bank
+            if (currentSlotPose) {
+                gameState.bank.push(currentSlotPose);
+                gameState.slots[slotIdx] = null;
+                gameState.selectedPoseId = null;
+                renderGameView();
+                return;
+            }
+        }
+
+        // Clear all slots
+        function clearSlots() {
+            const level = LEVELS[gameState.currentLevelIdx];
+            gameState.slots.forEach(poseId => {
+                if (poseId) gameState.bank.push(poseId);
+            });
+            gameState.slots = new Array(level.count).fill(null);
+            gameState.selectedPoseId = null;
+            renderGameView();
+        }
+
+        // HTML5 Drag & Drop Support
+        function handleDragStart(event, poseId) {
+            event.dataTransfer.setData('text/plain', poseId);
+            event.target.classList.add('dragging');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+        }
+
+        function handleDrop(event, slotIdx) {
+            event.preventDefault();
+            const poseId = event.dataTransfer.getData('text/plain');
+            if (!poseId) return;
+
+            // If coming from bank
+            if (gameState.bank.includes(poseId)) {
+                if (gameState.slots[slotIdx]) {
+                    gameState.bank.push(gameState.slots[slotIdx]);
+                }
+                gameState.slots[slotIdx] = poseId;
+                gameState.bank = gameState.bank.filter(id => id !== poseId);
+            } else {
+                // Swapping slots
+                const oldIdx = gameState.slots.indexOf(poseId);
+                if (oldIdx !== -1) {
+                    const temp = gameState.slots[slotIdx];
+                    gameState.slots[slotIdx] = poseId;
+                    gameState.slots[oldIdx] = temp;
+                }
+            }
+            gameState.selectedPoseId = null;
+            renderGameView();
+        }
+
+
+        // ==========================================
+        // ANIMATION & VERIFICATION
+        // ==========================================
+
+        function playSequenceAnimation() {
+            if (gameState.isPlayingAnimation) return;
+            gameState.isPlayingAnimation = true;
+
+            const level = LEVELS[gameState.currentLevelIdx];
+            let step = 0;
+
+            const indicator = document.getElementById('animation-indicator');
+
+            gameState.animationTimer = setInterval(() => {
+                // Remove highlight from previous slot
+                if (step > 0) {
+                    const prevSlot = document.getElementById(`slot-${step - 1}`);
+                    if (prevSlot) prevSlot.classList.remove('ring-4', 'ring-bauhaus-red', 'bg-bauhaus-yellow/20');
+                }
+
+                if (step < level.count) {
+                    const curSlot = document.getElementById(`slot-${step}`);
+                    if (curSlot) curSlot.classList.add('ring-4', 'ring-bauhaus-red', 'bg-bauhaus-yellow/20');
+                    if (indicator) {
+                        const poseId = gameState.slots[step];
+                        indicator.innerText = `Paso ${step + 1}: ${POSE_GRAPHICS[poseId].name}`;
+                    }
+                    step++;
+                } else {
+                    clearInterval(gameState.animationTimer);
+                    gameState.isPlayingAnimation = false;
+                    if (indicator) indicator.innerText = 'Secuencia completa. ¡Haz clic en Verificar!';
+                }
+            }, 700);
+        }
+
+        function verifySequence() {
+            const level = LEVELS[gameState.currentLevelIdx];
+
+            // Check if every slot matches the exact expected level pose order
+            let isCorrect = true;
+            for (let i = 0; i < level.count; i++) {
+                if (gameState.slots[i] !== level.poses[i]) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            if (isCorrect) {
+                showModal({
+                    success: true,
+                    title: level.number === 3 ? "¡Secuencia Final Lograda!" : "¡Excelente!",
+                    message: level.successMsg,
+                    btnText: level.number === LEVELS.length ? "Ver Resultado" : "Siguiente Nivel",
+                    action: () => {
+                        hideModal();
+                        if (gameState.currentLevelIdx + 1 < LEVELS.length) {
+                            initLevel(gameState.currentLevelIdx + 1);
+                        } else {
+                            renderCompletionView();
+                        }
+                    }
+                });
+            } else {
+                showModal({
+                    success: false,
+                    title: "Revisa la secuencia",
+                    message: "La dirección o postura no coinciden con la secuencia lógica. Utiliza el botón 💡 Pista si necesitas ayuda.",
+                    btnText: "Reorganizar",
+                    action: () => {
+                        hideModal();
+                    }
+                });
+            }
+        }
+
+        // Show Hint Modal
+        function showHintModal() {
+            const level = LEVELS[gameState.currentLevelIdx];
+            showModal({
+                success: false,
+                isHint: true,
+                title: `💡 Pista — Nivel ${level.number}`,
+                message: level.hintText,
+                btnText: "Entendido",
+                action: () => {
+                    hideModal();
+                }
+            });
+        }
+
+        // Modal Helpers
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMsg = document.getElementById('modal-message');
+        const modalBtn = document.getElementById('modal-btn');
+
+        function showModal({ success, isHint, title, message, btnText, action }) {
+            modalTitle.innerText = title;
+            modalMsg.innerText = message;
+            modalBtn.innerText = btnText;
+
+            if (isHint) {
+                modalIcon.className = "w-12 h-12 mx-auto rounded-full flex items-center justify-center text-bauhaus-dark text-xl font-bold bg-bauhaus-yellow border-2 border-bauhaus-dark shadow-lg";
+                modalIcon.innerText = "💡";
+                modalBtn.className = "w-full py-3 px-6 bg-bauhaus-dark text-white font-extrabold rounded-xl tracking-wider uppercase text-sm hover:bg-bauhaus-red transition-all active:scale-95 shadow-md";
+            } else if (success) {
+                modalIcon.className = "w-12 h-12 mx-auto rounded-full flex items-center justify-center text-white text-xl font-bold bg-bauhaus-red shadow-lg";
+                modalIcon.innerText = "✓";
+                modalBtn.className = "w-full py-3 px-6 bg-bauhaus-red text-white font-extrabold rounded-xl tracking-wider uppercase text-sm hover:bg-bauhaus-dark transition-all active:scale-95 shadow-md";
+            } else {
+                modalIcon.className = "w-12 h-12 mx-auto rounded-full flex items-center justify-center text-white text-xl font-bold bg-bauhaus-dark shadow-lg";
+                modalIcon.innerText = "!";
+                modalBtn.className = "w-full py-3 px-6 bg-bauhaus-dark text-white font-extrabold rounded-xl tracking-wider uppercase text-sm hover:bg-bauhaus-red transition-all active:scale-95 shadow-md";
+            }
+
+            modalBtn.onclick = action;
+            modalOverlay.classList.remove('hidden');
+        }
+
+        function hideModal() {
+            modalOverlay.classList.add('hidden');
+        }
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            renderIntroView();
+        };
+    </script>
+</body>
+</html>

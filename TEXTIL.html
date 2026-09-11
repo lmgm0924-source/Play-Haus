@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-[#F7F5F0]">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pattern It — Play-Haus Textile Workshop</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            bauhaus: {
+              red: '#D9381E',
+              yellow: '#F4BA02',
+              blue: '#1255B2',
+              black: '#1A1A1A',
+              cream: '#FAF8F5',
+              bg: '#F7F5F0',
+              sand: '#C8BEAC',
+              muted: '#7A756C'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #F7F5F0;
+      color: #1A1A1A;
+      font-family: 'Inter', sans-serif;
+      touch-action: manipulation;
+    }
+
+    /* Tactile button active animations */
+    .btn-tactile {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-tactile:active {
+      transform: scale(0.96);
+    }
+
+    /* Canvas Grid Background */
+    .bauhaus-grid {
+      background-image: 
+        radial-gradient(#1A1A1A 0.75px, transparent 0.75px),
+        linear-gradient(to right, rgba(26,26,26,0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(26,26,26,0.03) 1px, transparent 1px);
+      background-size: 20px 20px, 20px 20px, 20px 20px;
+      background-position: -0.5px -0.5px;
+    }
+
+    /* Custom Screen Transitions */
+    .screen {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.25s ease-in-out;
+    }
+    .screen.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    /* Prevent scrolling rubberband on iOS canvas dragging */
+    canvas {
+      touch-action: none;
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1A1A1A;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+
+<body class="h-full w-full flex flex-col items-center justify-between overflow-x-hidden select-none">
+
+  <!-- MAIN APP CONTAINER (Mobile-First Frame) -->
+  <div class="w-full max-w-md min-h-screen flex flex-col justify-between border-x border-[#1A1A1A]/10 bg-[#F7F5F0] relative shadow-2xl">
+
+    <!-- TOP HEADER / BRAND BAR -->
+    <header class="w-full px-5 py-3 border-b-2 border-[#1A1A1A] flex items-center justify-between bg-[#F7F5F0] sticky top-0 z-40">
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-4 bg-[#D9381E] border border-[#1A1A1A]"></div>
+        <div class="w-4 h-4 bg-[#F4BA02] rounded-full border border-[#1A1A1A]"></div>
+        <div class="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[14px] border-b-[#1255B2]"></div>
+        <span class="font-extrabold text-xs tracking-widest uppercase ml-1">PLAY-HAUS</span>
+      </div>
+      
+      <div id="headerStepBadge" class="hidden text-[10px] font-mono tracking-widest uppercase px-2 py-0.5 border border-[#1A1A1A] bg-white">
+        01 / MOTIVO
+      </div>
+    </header>
+
+    <!-- CONTENT SCREENS CONTAINER -->
+    <main class="flex-1 w-full flex flex-col relative overflow-y-auto">
+
+      <!-- ==========================================
+           SCREEN 0: INTRO SCREEN
+           ========================================== -->
+      <section id="screenIntro" class="screen active flex-col justify-between p-6 h-full min-h-[80vh]">
+        <div class="flex flex-col gap-4 mt-2">
+          <div class="inline-block self-start px-2 py-0.5 border border-[#1A1A1A] text-[10px] font-mono uppercase tracking-widest bg-white">
+            Taller de Textiles Bauhaus
+          </div>
+          
+          <h1 class="text-4xl font-extrabold tracking-tight text-[#1A1A1A] leading-none uppercase">
+            Pattern<br><span class="text-[#D9381E]">It</span>
+          </h1>
+          
+          <p class="text-lg font-medium text-[#1A1A1A] border-l-2 border-[#1A1A1A] pl-3 py-0.5">
+            Crea tu propio patrón.
+          </p>
+
+          <p class="text-xs text-[#7A756C] leading-relaxed">
+            Combina formas geométricas, diseña un motivo rítmico y conviértelo en un patrón textil único para un objeto.
+          </p>
+        </div>
+
+        <!-- Hero Geometric Visual Art Piece -->
+        <div class="my-6 w-full aspect-square border-2 border-[#1A1A1A] p-3 bg-white relative flex flex-col justify-center items-center overflow-hidden shadow-[4px_4px_0px_0px_#1A1A1A]">
+          <div class="grid grid-cols-3 gap-2 w-full h-full p-2">
+            <div class="bg-[#D9381E] border border-[#1A1A1A] flex items-center justify-center">
+              <div class="w-8 h-8 rounded-full bg-[#FAF8F5] border border-[#1A1A1A]"></div>
+            </div>
+            <div class="bg-[#F4BA02] border border-[#1A1A1A] flex items-center justify-center">
+              <div class="w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-b-[28px] border-b-[#1A1A1A]"></div>
+            </div>
+            <div class="bg-[#1255B2] border border-[#1A1A1A]"></div>
+            
+            <div class="bg-[#1A1A1A] border border-[#1A1A1A] flex items-center justify-center">
+              <div class="w-8 h-8 bg-[#F4BA02] border border-[#1A1A1A]"></div>
+            </div>
+            <div class="bg-[#FAF8F5] border border-[#1A1A1A] flex items-center justify-center relative">
+              <div class="w-10 h-5 bg-[#D9381E] rounded-t-full border border-[#1A1A1A]"></div>
+            </div>
+            <div class="bg-[#D9381E] border border-[#1A1A1A] rounded-full"></div>
+
+            <div class="bg-[#1255B2] border border-[#1A1A1A] rounded-tr-full"></div>
+            <div class="bg-[#C8BEAC] border border-[#1A1A1A]"></div>
+            <div class="bg-[#F4BA02] border border-[#1A1A1A] flex items-center justify-center">
+              <div class="w-3 h-3 bg-[#1A1A1A] rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <button id="btnStart" onclick="goToScreen('Motif')" class="btn-tactile w-full py-4 bg-[#1A1A1A] text-[#FAF8F5] font-bold text-sm tracking-widest uppercase border-2 border-[#1A1A1A] shadow-[4px_4px_0px_0px_#D9381E] flex items-center justify-center gap-2">
+          <span>Empezar</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </section>
+
+
+      <!-- ==========================================
+           SCREEN 1: CREATION / MOTIF SCREEN
+           ========================================== -->
+      <section id="screenMotif" class="screen flex-col p-5 gap-4">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-mono tracking-widest uppercase text-[#7A756C]">Paso 01</span>
+            <span class="text-[10px] font-mono uppercase text-[#D9381E] font-bold">2 - 5 Formas</span>
+          </div>
+          <h2 class="text-2xl font-extrabold uppercase text-[#1A1A1A] tracking-tight">
+            1. Crea tu motivo
+          </h2>
+          <p class="text-xs text-[#7A756C]">
+            Añade formas, cámbialas de posición, color o tamaño.
+          </p>
+        </div>
+
+        <!-- CANVAS CONTAINER -->
+        <div class="w-full flex flex-col items-center">
+          <div class="relative w-full aspect-square border-2 border-[#1A1A1A] bg-white shadow-[4px_4px_0px_0px_#1A1A1A] overflow-hidden bauhaus-grid flex items-center justify-center">
+            
+            <canvas id="motifCanvas" width="320" height="320" class="w-full h-full cursor-pointer touch-none"></canvas>
+            
+            <!-- Grid Center Guides -->
+            <div class="absolute inset-0 pointer-events-none border-b border-r border-[#1A1A1A]/10 w-1/2 h-1/2"></div>
+            <div class="absolute right-0 bottom-0 pointer-events-none border-t border-l border-[#1A1A1A]/10 w-1/2 h-1/2"></div>
+
+            <!-- Empty State Helper -->
+            <div id="canvasEmptyHint" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-6 text-center opacity-60">
+              <svg class="w-8 h-8 text-[#1A1A1A] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+              <p class="text-xs font-medium text-[#1A1A1A]">Toca una forma abajo para empezar</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SHAPE SELECTOR TOOLBAR -->
+        <div class="flex flex-col gap-2">
+          <label class="text-[10px] font-mono uppercase tracking-wider text-[#1A1A1A] font-bold">Añadir Forma</label>
+          <div class="grid grid-cols-7 gap-1.5 p-2 bg-white border border-[#1A1A1A]">
+            <button onclick="addShape('circle')" class="btn-tactile aspect-square flex items-center justify-center border border-[#1A1A1A] bg-[#FAF8F5] hover:bg-[#F4BA02]/20" title="Círculo">
+              <div class="w-5 h-5 rounded-full bg-[#1A1A1A]"></div>
+            </button>
+            <button onclick="addShape('square')" class="btn-tactile aspect-square flex items-center justify-center border border-[#1A1A1A] bg-[#FAF8F5] hover:bg-[#F4BA02]/20" title="Cuadrado">
+              <div class="w-4 h-4 bg-[#1A1A1A]"></div>
+            </button>
+            <button onclick="addShape('triangle')" class="btn-tactile aspect-square flex items-center justify-center border border-[#1A1A1A] bg-[#FAF8F5] hover:bg-[#F4BA02]/20" title="Triángulo">
+              <div class="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[14px] border-b-[#1A1A1A]"></div>
+            </button>
+            <button onclick="addShape('semicircle')" class="btn-tactile aspect-square flex items-center justify-center border border-[#1A1A1A] bg-[#FAF8F5] hover:bg-[#F4BA02]/20" title="Semicírculo">
+              <div class="w-5 h-2.5 bg-[#1A1A1A] rounded-t-full"></div>
+            </button>
+            <button onclick="addShape('rectangle')" class="btn-tactile aspect-square flex items-center justify-center border border-[#1A1A1A] bg-[#FAF8F5] hover:bg-[#F4BA02]/20" title="Rectángulo">
+              <div class="w-5 h-2.5 bg-[#1A1A1A]"></div>
+            </button>
+            <button onclick="addShape('line')" class="btn-tactile aspect-square flex items-center justify-center border border-[#1A1A1A] bg-[#FAF8F5] hover:bg-[#F4BA02]/20" title="Línea">
+              <div class="w-5 h-1 bg-[#1A1A1A] -rotate-45"></div>
+            </button>
+            <button onclick="addShape('dot')" class="btn-tactile aspect-square flex items-center justify-center border border-[#1A1A1A] bg-[#FAF8F5] hover:bg-[#F4BA02]/20" title="Punto">
+              <div class="w-2 h-2 rounded-full bg-[#1A1A1A]"></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- ACTIVE SHAPE ACTIONS (Shown when shape is selected) -->
+        <div id="shapeControlsBar" class="flex flex-col gap-2 transition-all">
+          <div class="flex items-center justify-between">
+            <label class="text-[10px] font-mono uppercase tracking-wider text-[#1A1A1A] font-bold">Color del Elemento</label>
+            <span id="selectedShapeName" class="text-[10px] font-mono uppercase text-[#7A756C]">Ninguna selección</span>
+          </div>
+
+          <!-- Color Palette Swatches -->
+          <div class="flex items-center gap-2 p-2 bg-white border border-[#1A1A1A] justify-between">
+            <div class="flex items-center gap-2 w-full justify-around">
+              <button onclick="setSelectedColor('#D9381E')" class="w-8 h-8 rounded-full bg-[#D9381E] border-2 border-[#1A1A1A] btn-tactile" title="Rojo"></button>
+              <button onclick="setSelectedColor('#F4BA02')" class="w-8 h-8 rounded-full bg-[#F4BA02] border-2 border-[#1A1A1A] btn-tactile" title="Amarillo"></button>
+              <button onclick="setSelectedColor('#1255B2')" class="w-8 h-8 rounded-full bg-[#1255B2] border-2 border-[#1A1A1A] btn-tactile" title="Azul"></button>
+              <button onclick="setSelectedColor('#1A1A1A')" class="w-8 h-8 rounded-full bg-[#1A1A1A] border-2 border-[#1A1A1A] btn-tactile" title="Negro"></button>
+              <button onclick="setSelectedColor('#FAF8F5')" class="w-8 h-8 rounded-full bg-[#FAF8F5] border-2 border-[#1A1A1A] btn-tactile" title="Blanco"></button>
+              <button onclick="setSelectedColor('#C8BEAC')" class="w-8 h-8 rounded-full bg-[#C8BEAC] border-2 border-[#1A1A1A] btn-tactile" title="Arena"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CANVAS CLEAR & PROCEED -->
+        <div class="flex items-center gap-3 mt-2">
+          <button onclick="clearMotif()" class="px-3 py-3 border border-[#1A1A1A] bg-white text-[#1A1A1A] text-xs font-bold uppercase tracking-wider btn-tactile">
+            Limpiar
+          </button>
+
+          <button id="btnToPattern" onclick="goToScreen('Pattern')" class="btn-tactile flex-1 py-3.5 bg-[#1A1A1A] text-[#FAF8F5] font-bold text-xs tracking-widest uppercase border-2 border-[#1A1A1A] shadow-[3px_3px_0px_0px_#F4BA02] flex items-center justify-center gap-2">
+            <span>Crear patrón</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ==========================================
+           SCREEN 2: REPEAT / PATTERN SCREEN
+           ========================================== -->
+      <section id="screenPattern" class="screen flex-col p-5 gap-4">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-mono tracking-widest uppercase text-[#7A756C]">Paso 02</span>
+            <span class="text-[10px] font-mono uppercase text-[#1255B2] font-bold">Estructura Rítmica</span>
+          </div>
+          <h2 class="text-2xl font-extrabold uppercase text-[#1A1A1A] tracking-tight">
+            2. Repite tu diseño
+          </h2>
+          <p class="text-xs text-[#7A756C]">
+            Observa cómo tu motivo se transforma en un patrón.
+          </p>
+        </div>
+
+        <!-- REPEATING PATTERN PREVIEW CANVAS -->
+        <div class="w-full aspect-square border-2 border-[#1A1A1A] bg-white shadow-[4px_4px_0px_0px_#1A1A1A] overflow-hidden relative">
+          <canvas id="patternCanvas" width="400" height="400" class="w-full h-full"></canvas>
+        </div>
+
+        <!-- REPETITION MODES -->
+        <div class="flex flex-col gap-2">
+          <label class="text-[10px] font-mono uppercase tracking-wider text-[#1A1A1A] font-bold">Modo de Repetición</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button id="modeGrid" onclick="setPatternMode('grid')" class="pattern-mode-btn py-2.5 px-2 border-2 border-[#1A1A1A] bg-[#1A1A1A] text-white text-xs font-bold uppercase tracking-wider text-center btn-tactile">
+              Repetir
+            </button>
+            <button id="modeOffset" onclick="setPatternMode('offset')" class="pattern-mode-btn py-2.5 px-2 border-2 border-[#1A1A1A] bg-white text-[#1A1A1A] text-xs font-bold uppercase tracking-wider text-center btn-tactile">
+              Alternar
+            </button>
+            <button id="modeMirror" onclick="setPatternMode('mirror')" class="pattern-mode-btn py-2.5 px-2 border-2 border-[#1A1A1A] bg-white text-[#1A1A1A] text-xs font-bold uppercase tracking-wider text-center btn-tactile">
+              Espejar
+            </button>
+          </div>
+        </div>
+
+        <!-- DENSITY / SCALE SLIDER -->
+        <div class="flex flex-col gap-1.5 p-3 bg-white border border-[#1A1A1A]">
+          <div class="flex justify-between items-center text-[10px] font-mono uppercase">
+            <span class="font-bold text-[#1A1A1A]">Escala del Patrón</span>
+            <span id="scaleValText" class="text-[#7A756C]">Medio</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold">−</span>
+            <input type="range" id="patternScaleRange" min="3" max="8" value="5" step="1" oninput="updatePatternScale(this.value)" class="w-full accent-[#1A1A1A] cursor-pointer" />
+            <span class="text-xs font-bold">+</span>
+          </div>
+        </div>
+
+        <!-- NAVIGATION BUTTONS -->
+        <div class="flex items-center gap-2 mt-1">
+          <button onclick="goToScreen('Motif')" class="px-4 py-3.5 border border-[#1A1A1A] bg-white text-[#1A1A1A] text-xs font-bold uppercase tracking-wider btn-tactile">
+            Volver
+          </button>
+          
+          <button onclick="goToScreen('Product')" class="btn-tactile flex-1 py-3.5 bg-[#1A1A1A] text-[#FAF8F5] font-bold text-xs tracking-widest uppercase border-2 border-[#1A1A1A] shadow-[3px_3px_0px_0px_#1255B2] flex items-center justify-center gap-2">
+            <span>Aplicar a un objeto</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ==========================================
+           SCREEN 3: PRODUCT SCREEN
+           ========================================== -->
+      <section id="screenProduct" class="screen flex-col p-5 gap-4">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-mono tracking-widest uppercase text-[#7A756C]">Paso 03</span>
+            <span class="text-[10px] font-mono uppercase text-[#F4BA02] font-bold">Aplicación Real</span>
+          </div>
+          <h2 class="text-2xl font-extrabold uppercase text-[#1A1A1A] tracking-tight">
+            3. Aplícalo
+          </h2>
+          <p class="text-xs text-[#7A756C]">
+            Mira cómo tu patrón transforma un objeto.
+          </p>
+        </div>
+
+        <!-- PRODUCT SELECTOR TABS -->
+        <div class="grid grid-cols-4 gap-1.5">
+          <button id="prodTab-tshirt" onclick="selectProduct('tshirt')" class="product-tab py-2 border border-[#1A1A1A] bg-[#1A1A1A] text-white text-[10px] font-bold uppercase tracking-wider text-center btn-tactile">
+            Camiseta
+          </button>
+          <button id="prodTab-chair" onclick="selectProduct('chair')" class="product-tab py-2 border border-[#1A1A1A] bg-white text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider text-center btn-tactile">
+            Sillón
+          </button>
+          <button id="prodTab-tote" onclick="selectProduct('tote')" class="product-tab py-2 border border-[#1A1A1A] bg-white text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider text-center btn-tactile">
+            Tote Bag
+          </button>
+          <button id="prodTab-scarf" onclick="selectProduct('scarf')" class="product-tab py-2 border border-[#1A1A1A] bg-white text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider text-center btn-tactile">
+            Bufanda
+          </button>
+        </div>
+
+        <!-- PRODUCT DISPLAY VIEWPORT (VECTOR MASK SVG) -->
+        <div class="w-full aspect-square border-2 border-[#1A1A1A] bg-white shadow-[4px_4px_0px_0px_#1A1A1A] p-4 flex items-center justify-center relative overflow-hidden">
+          <svg id="productSvg" class="w-full h-full max-h-[300px]" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="userPatternFill" patternUnits="userSpaceOnUse" width="80" height="80">
+                <image id="svgPatternImage" href="" x="0" y="0" width="80" height="80" />
+              </pattern>
+            </defs>
+
+            <!-- PRODUCT SHAPE MASK GROUP FILLED dynamically BY JS -->
+            <g id="productGraphicsGroup"></g>
+          </svg>
+
+          <!-- Label overlay -->
+          <div class="absolute bottom-2 left-2 bg-white/90 border border-[#1A1A1A] px-2 py-0.5 text-[9px] font-mono uppercase tracking-widest">
+            <span id="productLabel">Camiseta de Algodón</span>
+          </div>
+        </div>
+
+        <!-- NAVIGATION BUTTONS -->
+        <div class="flex items-center gap-2 mt-2">
+          <button onclick="goToScreen('Pattern')" class="px-4 py-3.5 border border-[#1A1A1A] bg-white text-[#1A1A1A] text-xs font-bold uppercase tracking-wider btn-tactile">
+            Atrás
+          </button>
+          
+          <button onclick="goToScreen('Complete')" class="btn-tactile flex-1 py-3.5 bg-[#1A1A1A] text-[#FAF8F5] font-bold text-xs tracking-widest uppercase border-2 border-[#1A1A1A] shadow-[3px_3px_0px_0px_#D9381E] flex items-center justify-center gap-2">
+            <span>Finalizar</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ==========================================
+           SCREEN 4: COMPLETION SCREEN
+           ========================================== -->
+      <section id="screenComplete" class="screen flex-col p-6 gap-5 h-full min-h-[80vh] justify-between">
+        <div class="flex flex-col gap-3">
+          <div class="inline-block self-start px-2 py-0.5 border border-[#1A1A1A] text-[10px] font-mono uppercase tracking-widest bg-white">
+            Colección Play-Haus
+          </div>
+
+          <h2 class="text-3xl font-extrabold uppercase text-[#1A1A1A] tracking-tight leading-none">
+            ¡Tu patrón<br><span class="text-[#D9381E]">está listo!</span>
+          </h2>
+
+          <div class="p-4 bg-white border-2 border-[#1A1A1A] shadow-[3px_3px_0px_0px_#1A1A1A]">
+            <p class="text-xs text-[#1A1A1A] font-medium italic leading-relaxed">
+              “En el diseño textil, una forma puede convertirse en ritmo cuando se repite.”
+            </p>
+            <p class="text-[10px] font-mono text-[#7A756C] mt-2 uppercase tracking-widest">
+              — Taller de Textiles Bauhaus
+            </p>
+          </div>
+        </div>
+
+        <!-- FINAL SHOWCASE CARD -->
+        <div class="w-full bg-white border-2 border-[#1A1A1A] p-3 flex flex-col gap-3 shadow-[4px_4px_0px_0px_#F4BA02]">
+          <div class="w-full aspect-[4/3] border border-[#1A1A1A] overflow-hidden relative bg-[#F7F5F0]">
+            <canvas id="finalShowcaseCanvas" width="300" height="225" class="w-full h-full object-cover"></canvas>
+          </div>
+          <div class="flex items-center justify-between px-1">
+            <div>
+              <span class="block text-xs font-extrabold uppercase text-[#1A1A1A]">Diseño de Patrón No. <span id="designId">84</span></span>
+              <span id="summaryText" class="block text-[10px] text-[#7A756C] font-mono">Composición geométrica</span>
+            </div>
+            <div class="w-3 h-3 bg-[#D9381E] border border-[#1A1A1A]"></div>
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="flex flex-col gap-2.5">
+          <button onclick="downloadPatternTile()" class="w-full py-3 bg-white text-[#1A1A1A] font-bold text-xs tracking-widest uppercase border border-[#1A1A1A] flex items-center justify-center gap-2 btn-tactile">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>Guardar Imagen del Patrón</span>
+          </button>
+
+          <button onclick="goToScreen('Motif')" class="btn-tactile w-full py-3.5 bg-[#1A1A1A] text-[#FAF8F5] font-bold text-xs tracking-widest uppercase border-2 border-[#1A1A1A] shadow-[3px_3px_0px_0px_#1A1A1A]">
+            Crear otro patrón
+          </button>
+
+          <button onclick="goToScreen('Pattern')" class="text-center text-xs font-bold text-[#7A756C] uppercase tracking-wider py-1 btn-tactile">
+            Volver a mi patrón
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="w-full py-2 px-5 border-t border-[#1A1A1A]/20 bg-[#F7F5F0] text-center text-[9px] font-mono text-[#7A756C] uppercase tracking-wider">
+      Play-Haus Interactive Studio &copy; 2026
+    </footer>
+
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // --- STATE MANAGEMENT ---
+    let currentScreen = 'Intro';
+    let motifShapes = [];
+    let selectedShapeId = null;
+    let currentPatternMode = 'grid'; // 'grid', 'offset', 'mirror'
+    let patternGridCount = 5;
+    let selectedProduct = 'tshirt';
+    let isDragging = false;
+    let activeAction = 'move'; // 'move', 'rotate', 'resize'
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let initialDist = 0;
+    let initialSize = 64;
+
+    // Default Play-Haus Preset Motif Shapes if none added
+    const DEFAULT_SHAPES = [
+      { id: 1, type: 'square', x: 160, y: 160, size: 70, rotation: 0, color: '#D9381E' },
+      { id: 2, type: 'circle', x: 120, y: 120, size: 60, rotation: 0, color: '#F4BA02' },
+      { id: 3, type: 'semicircle', x: 200, y: 190, size: 65, rotation: 180, color: '#1255B2' },
+      { id: 4, type: 'triangle', x: 180, y: 110, size: 50, rotation: 45, color: '#1A1A1A' }
+    ];
+
+    // Canvas references
+    let mCanvas, mCtx;
+    let pCanvas, pCtx;
+
+    // --- INITIALIZATION ---
+    window.addEventListener('load', () => {
+      mCanvas = document.getElementById('motifCanvas');
+      mCtx = mCanvas.getContext('2d');
+
+      pCanvas = document.getElementById('patternCanvas');
+      pCtx = pCanvas.getContext('2d');
+
+      // Load initial preset shapes
+      motifShapes = JSON.parse(JSON.stringify(DEFAULT_SHAPES));
+
+      // Register canvas touch & mouse interactions
+      setupCanvasEvents();
+      
+      // Render motif initially
+      renderMotifCanvas();
+
+      // Random Design ID
+      document.getElementById('designId').innerText = Math.floor(10 + Math.random() * 89);
+    });
+
+    // --- NAVIGATION CONTROLLER ---
+    function goToScreen(screenName) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById('screen' + screenName);
+      if (target) {
+        target.classList.add('active');
+        currentScreen = screenName;
+      }
+
+      const badge = document.getElementById('headerStepBadge');
+      if (screenName === 'Intro') {
+        badge.classList.add('hidden');
+      } else {
+        badge.classList.remove('hidden');
+        if (screenName === 'Motif') badge.innerText = '01 / MOTIVO';
+        else if (screenName === 'Pattern') badge.innerText = '02 / PATRÓN';
+        else if (screenName === 'Product') badge.innerText = '03 / APLICACIÓN';
+        else if (screenName === 'Complete') badge.innerText = 'FINAL';
+      }
+
+      // Execute screen specific setups
+      if (screenName === 'Motif') {
+        renderMotifCanvas();
+      } else if (screenName === 'Pattern') {
+        renderPatternCanvas();
+      } else if (screenName === 'Product') {
+        updateProductPreview();
+      } else if (screenName === 'Complete') {
+        renderFinalShowcase();
+      }
+    }
+
+    // --- MOTIF CANVAS & EDITING SYSTEM ---
+    function addShape(type) {
+      const id = Date.now();
+      const colors = ['#D9381E', '#F4BA02', '#1255B2', '#1A1A1A', '#FAF8F5', '#C8BEAC'];
+      const defaultColor = colors[motifShapes.length % colors.length];
+
+      const newShape = {
+        id: id,
+        type: type,
+        x: 160 + (Math.random() * 20 - 10),
+        y: 160 + (Math.random() * 20 - 10),
+        size: type === 'line' ? 80 : (type === 'dot' ? 24 : 64),
+        rotation: 0,
+        color: defaultColor
+      };
+
+      motifShapes.push(newShape);
+      selectedShapeId = id;
+      renderMotifCanvas();
+      updateSelectedShapeUI();
+    }
+
+    function clearMotif() {
+      motifShapes = [];
+      selectedShapeId = null;
+      renderMotifCanvas();
+      updateSelectedShapeUI();
+    }
+
+    function deleteSelectedShape() {
+      if (!selectedShapeId) return;
+      motifShapes = motifShapes.filter(s => s.id !== selectedShapeId);
+      selectedShapeId = null;
+      renderMotifCanvas();
+      updateSelectedShapeUI();
+    }
+
+    function setSelectedColor(color) {
+      if (!selectedShapeId) return;
+      const shape = motifShapes.find(s => s.id === selectedShapeId);
+      if (shape) {
+        shape.color = color;
+        renderMotifCanvas();
+      }
+    }
+
+    function rotateSelected(deg) {
+      if (!selectedShapeId) return;
+      const shape = motifShapes.find(s => s.id === selectedShapeId);
+      if (shape) {
+        shape.rotation = (shape.rotation + deg) % 360;
+        renderMotifCanvas();
+      }
+    }
+
+    function scaleSelected(factor) {
+      if (!selectedShapeId) return;
+      const shape = motifShapes.find(s => s.id === selectedShapeId);
+      if (shape) {
+        shape.size = Math.max(16, Math.min(180, shape.size * factor));
+        renderMotifCanvas();
+      }
+    }
+
+    function updateSelectedShapeUI() {
+      const hint = document.getElementById('canvasEmptyHint');
+      if (motifShapes.length === 0) {
+        hint.style.display = 'flex';
+      } else {
+        hint.style.display = 'none';
+      }
+
+      const nameLabel = document.getElementById('selectedShapeName');
+      const shape = motifShapes.find(s => s.id === selectedShapeId);
+      if (shape) {
+        const names = {
+          circle: 'Círculo', square: 'Cuadrado', triangle: 'Triángulo',
+          semicircle: 'Semicírculo', rectangle: 'Rectángulo', line: 'Línea', dot: 'Punto'
+        };
+        nameLabel.innerText = names[shape.type] || 'Forma';
+      } else {
+        nameLabel.innerText = 'Ninguna selección';
+      }
+    }
+
+    // --- CANVAS TOUCH / MOUSE INTERACTION LOGIC ---
+    function setupCanvasEvents() {
+      const getPos = (e) => {
+        const rect = mCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX = mCanvas.width / rect.width;
+        const scaleY = mCanvas.height / rect.height;
+        return {
+          x: (clientX - rect.left) * scaleX,
+          y: (clientY - rect.top) * scaleY
+        };
+      };
+
+      const handleStart = (e) => {
+        const pos = getPos(e);
+        const shape = motifShapes.find(s => s.id === selectedShapeId);
+
+        // Check handle interaction first if a shape is currently selected
+        if (shape) {
+          const dx = pos.x - shape.x;
+          const dy = pos.y - shape.y;
+          const rad = (-shape.rotation * Math.PI) / 180;
+          const lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+          const ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+          const boxSize = shape.size + 16;
+          const hs = boxSize / 2;
+
+          const handleRadius = 22; // Generous hit-box for fingers
+
+          // Delete Handle (-hs, -hs)
+          if (Math.hypot(lx - (-hs), ly - (-hs)) <= handleRadius) {
+            deleteSelectedShape();
+            return;
+          }
+
+          // Rotate Handle (0, -hs - 22)
+          if (Math.hypot(lx - 0, ly - (-hs - 22)) <= handleRadius) {
+            isDragging = true;
+            activeAction = 'rotate';
+            return;
+          }
+
+          // Resize Handle (hs, hs)
+          if (Math.hypot(lx - hs, ly - hs) <= handleRadius) {
+            isDragging = true;
+            activeAction = 'resize';
+            initialDist = Math.hypot(dx, dy);
+            initialSize = shape.size;
+            return;
+          }
+        }
+
+        // Find top-most shape under touch point for selection or moving
+        let hit = null;
+        for (let i = motifShapes.length - 1; i >= 0; i--) {
+          const s = motifShapes[i];
+          const dist = Math.hypot(pos.x - s.x, pos.y - s.y);
+          if (dist <= (s.size / 1.1) + 10) {
+            hit = s;
+            break;
+          }
+        }
+
+        if (hit) {
+          selectedShapeId = hit.id;
+          isDragging = true;
+          activeAction = 'move';
+          dragOffsetX = pos.x - hit.x;
+          dragOffsetY = pos.y - hit.y;
+        } else {
+          selectedShapeId = null;
+        }
+
+        renderMotifCanvas();
+        updateSelectedShapeUI();
+      };
+
+      const handleMove = (e) => {
+        if (!isDragging || !selectedShapeId) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        const shape = motifShapes.find(s => s.id === selectedShapeId);
+        if (!shape) return;
+
+        if (activeAction === 'move') {
+          shape.x = Math.max(10, Math.min(310, pos.x - dragOffsetX));
+          shape.y = Math.max(10, Math.min(310, pos.y - dragOffsetY));
+        } else if (activeAction === 'rotate') {
+          const angleRad = Math.atan2(pos.y - shape.y, pos.x - shape.x);
+          let deg = (angleRad * 180 / Math.PI) + 90;
+          if (deg < 0) deg += 360;
+          shape.rotation = Math.round(deg);
+        } else if (activeAction === 'resize') {
+          const currentDist = Math.hypot(pos.x - shape.x, pos.y - shape.y);
+          const ratio = currentDist / (initialDist || 1);
+          shape.size = Math.max(16, Math.min(220, Math.round(initialSize * ratio)));
+        }
+
+        renderMotifCanvas();
+      };
+
+      const handleEnd = () => {
+        isDragging = false;
+      };
+
+      mCanvas.addEventListener('mousedown', handleStart);
+      mCanvas.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+
+      mCanvas.addEventListener('touchstart', handleStart, { passive: false });
+      mCanvas.addEventListener('touchmove', handleMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
+    }
+
+    // --- MOTIF RENDERER ---
+    function renderMotifCanvas() {
+      if (!mCtx) return;
+      mCtx.clearRect(0, 0, mCanvas.width, mCanvas.height);
+
+      motifShapes.forEach(shape => {
+        drawSingleShape(mCtx, shape);
+
+        // Draw interactive direct-manipulation handles for selected shape
+        if (shape.id === selectedShapeId) {
+          mCtx.save();
+          mCtx.translate(shape.x, shape.y);
+          mCtx.rotate((shape.rotation * Math.PI) / 180);
+
+          const boxSize = shape.size + 16;
+          const hs = boxSize / 2;
+
+          // Bounding Box
+          mCtx.strokeStyle = '#1A1A1A';
+          mCtx.lineWidth = 1.5;
+          mCtx.setLineDash([4, 4]);
+          mCtx.strokeRect(-hs, -hs, boxSize, boxSize);
+
+          // Rotate Stem Line
+          mCtx.setLineDash([]);
+          mCtx.beginPath();
+          mCtx.moveTo(0, -hs);
+          mCtx.lineTo(0, -hs - 22);
+          mCtx.stroke();
+
+          // 1. ROTATE HANDLE (Top Stem)
+          mCtx.fillStyle = '#1255B2';
+          mCtx.beginPath();
+          mCtx.arc(0, -hs - 22, 11, 0, Math.PI * 2);
+          mCtx.fill();
+          mCtx.stroke();
+          // Rotation icon inside
+          mCtx.strokeStyle = '#FAF8F5';
+          mCtx.lineWidth = 2;
+          mCtx.beginPath();
+          mCtx.arc(0, -hs - 22, 5, 0, Math.PI * 1.5);
+          mCtx.stroke();
+
+          // 2. RESIZE HANDLE (Bottom-Right Corner)
+          mCtx.fillStyle = '#F4BA02';
+          mCtx.strokeStyle = '#1A1A1A';
+          mCtx.lineWidth = 1.5;
+          mCtx.beginPath();
+          mCtx.arc(hs, hs, 11, 0, Math.PI * 2);
+          mCtx.fill();
+          mCtx.stroke();
+          // Scale arrow lines
+          mCtx.strokeStyle = '#1A1A1A';
+          mCtx.lineWidth = 2;
+          mCtx.beginPath();
+          mCtx.moveTo(hs - 4, hs + 4);
+          mCtx.lineTo(hs + 4, hs - 4);
+          mCtx.stroke();
+
+          // 3. DELETE HANDLE (Top-Left Corner)
+          mCtx.fillStyle = '#D9381E';
+          mCtx.strokeStyle = '#1A1A1A';
+          mCtx.lineWidth = 1.5;
+          mCtx.beginPath();
+          mCtx.arc(-hs, -hs, 11, 0, Math.PI * 2);
+          mCtx.fill();
+          mCtx.stroke();
+          // Cross 'X'
+          mCtx.strokeStyle = '#FAF8F5';
+          mCtx.lineWidth = 2;
+          mCtx.beginPath();
+          mCtx.moveTo(-hs - 4, -hs - 4);
+          mCtx.lineTo(-hs + 4, -hs + 4);
+          mCtx.moveTo(-hs + 4, -hs - 4);
+          mCtx.lineTo(-hs - 4, -hs + 4);
+          mCtx.stroke();
+
+          mCtx.restore();
+        }
+      });
+    }
+
+    // SHAPE DRAWING PRIMITIVES
+    function drawSingleShape(ctx, shape) {
+      ctx.save();
+      ctx.translate(shape.x, shape.y);
+      ctx.rotate((shape.rotation * Math.PI) / 180);
+
+      ctx.fillStyle = shape.color;
+      ctx.strokeStyle = '#1A1A1A';
+      ctx.lineWidth = 2;
+
+      const s = shape.size;
+
+      ctx.beginPath();
+      switch (shape.type) {
+        case 'circle':
+          ctx.arc(0, 0, s / 2, 0, Math.PI * 2);
+          break;
+
+        case 'square':
+          ctx.rect(-s / 2, -s / 2, s, s);
+          break;
+
+        case 'rectangle':
+          ctx.rect(-s / 2, -s / 4, s, s / 2);
+          break;
+
+        case 'triangle':
+          ctx.moveTo(0, -s / 2);
+          ctx.lineTo(s / 2, s / 2);
+          ctx.lineTo(-s / 2, s / 2);
+          ctx.closePath();
+          break;
+
+        case 'semicircle':
+          ctx.arc(0, 0, s / 2, Math.PI, 0);
+          ctx.closePath();
+          break;
+
+        case 'line':
+          ctx.rect(-s / 2, -4, s, 8);
+          break;
+
+        case 'dot':
+          ctx.arc(0, 0, s / 2, 0, Math.PI * 2);
+          break;
+      }
+
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // --- STEP 2: REPEATING PATTERN ENGINE ---
+    function setPatternMode(mode) {
+      currentPatternMode = mode;
+      document.querySelectorAll('.pattern-mode-btn').forEach(btn => {
+        btn.classList.remove('bg-[#1A1A1A]', 'text-white');
+        btn.classList.add('bg-white', 'text-[#1A1A1A]');
+      });
+
+      const activeBtn = document.getElementById('mode' + mode.charAt(0).toUpperCase() + mode.slice(1));
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-white', 'text-[#1A1A1A]');
+        activeBtn.classList.add('bg-[#1A1A1A]', 'text-white');
+      }
+
+      renderPatternCanvas();
+    }
+
+    function updatePatternScale(val) {
+      patternGridCount = parseInt(val);
+      const labels = {3: 'Muy Grande', 4: 'Grande', 5: 'Medio', 6: 'Denso', 7: 'Muy Denso', 8: 'Fino'};
+      document.getElementById('scaleValText').innerText = labels[val] || 'Medio';
+      renderPatternCanvas();
+    }
+
+    function renderPatternCanvas() {
+      if (!pCtx) return;
+      const w = pCanvas.width;
+      const h = pCanvas.height;
+      pCtx.clearRect(0, 0, w, h);
+
+      // Create temporary offscreen motif tile
+      const offscreen = document.createElement('canvas');
+      offscreen.width = 160;
+      offscreen.height = 160;
+      const oCtx = offscreen.getContext('2d');
+
+      // Draw motif scaled to tile size (320 -> 160)
+      oCtx.save();
+      oCtx.scale(0.5, 0.5);
+      motifShapes.forEach(shape => drawSingleShape(oCtx, shape));
+      oCtx.restore();
+
+      const tileSize = w / patternGridCount;
+
+      for (let row = -1; row <= patternGridCount + 1; row++) {
+        for (let col = -1; col <= patternGridCount + 1; col++) {
+          pCtx.save();
+
+          let x = col * tileSize;
+          let y = row * tileSize;
+
+          if (currentPatternMode === 'offset') {
+            // Half-drop offset repeat
+            if (Math.abs(row) % 2 === 1) {
+              x += tileSize / 2;
+            }
+          } else if (currentPatternMode === 'mirror') {
+            // Mirrored 2x2 symmetry repeat
+            pCtx.translate(x + tileSize / 2, y + tileSize / 2);
+            const flipX = (Math.abs(col) % 2 === 1) ? -1 : 1;
+            const flipY = (Math.abs(row) % 2 === 1) ? -1 : 1;
+            pCtx.scale(flipX, flipY);
+            pCtx.translate(-tileSize / 2, -tileSize / 2);
+            x = 0;
+            y = 0;
+          }
+
+          pCtx.drawImage(offscreen, x, y, tileSize, tileSize);
+          pCtx.restore();
+        }
+      }
+    }
+
+    // --- STEP 3: PRODUCT MOCKUP RENDERER ---
+    function selectProduct(prodKey) {
+      selectedProduct = prodKey;
+      document.querySelectorAll('.product-tab').forEach(b => {
+        b.classList.remove('bg-[#1A1A1A]', 'text-white');
+        b.classList.add('bg-white', 'text-[#1A1A1A]');
+      });
+
+      const tab = document.getElementById('prodTab-' + prodKey);
+      if (tab) {
+        tab.classList.remove('bg-white', 'text-[#1A1A1A]');
+        tab.classList.add('bg-[#1A1A1A]', 'text-white');
+      }
+
+      updateProductPreview();
+    }
+
+    function updateProductPreview() {
+      // 1. Export current pattern to image data URL for SVG pattern element
+      renderPatternCanvas();
+      const dataUrl = pCanvas.toDataURL('image/png');
+      document.getElementById('svgPatternImage').setAttribute('href', dataUrl);
+
+      const group = document.getElementById('productGraphicsGroup');
+      const label = document.getElementById('productLabel');
+
+      if (selectedProduct === 'tshirt') {
+        label.innerText = 'Camiseta de Algodón';
+        group.innerHTML = `
+          <!-- T-Shirt Silhouette -->
+          <path d="M90 60 Q150 85 210 60 L260 100 L225 140 L200 120 L200 260 L100 260 L100 120 L75 140 L40 100 Z" 
+                fill="url(#userPatternFill)" stroke="#1A1A1A" stroke-width="3" stroke-linejoin="round" />
+          <!-- Seams & Collar Lines -->
+          <path d="M110 65 Q150 90 190 65" fill="none" stroke="#1A1A1A" stroke-width="3" />
+          <path d="M100 120 L75 140" fill="none" stroke="#1A1A1A" stroke-width="2" />
+          <path d="M200 120 L225 140" fill="none" stroke="#1A1A1A" stroke-width="2" />
+        `;
+      } else if (selectedProduct === 'chair') {
+        label.innerText = 'Sillón Geometrico Bauhaus';
+        group.innerHTML = `
+          <!-- Armchair Silhouette -->
+          <!-- Backrest -->
+          <rect x="70" y="50" width="160" height="110" rx="8" fill="url(#userPatternFill)" stroke="#1A1A1A" stroke-width="3" />
+          <!-- Main Cushion -->
+          <rect x="55" y="150" width="190" height="70" rx="6" fill="url(#userPatternFill)" stroke="#1A1A1A" stroke-width="3" />
+          <!-- Side Arms -->
+          <rect x="40" y="120" width="30" height="100" rx="4" fill="#FAF8F5" stroke="#1A1A1A" stroke-width="3" />
+          <rect x="230" y="120" width="30" height="100" rx="4" fill="#FAF8F5" stroke="#1A1A1A" stroke-width="3" />
+          <!-- Chair Legs -->
+          <line x1="70" y1="220" x2="60" y2="265" stroke="#1A1A1A" stroke-width="4" stroke-linecap="round" />
+          <line x1="230" y1="220" x2="240" y2="265" stroke="#1A1A1A" stroke-width="4" stroke-linecap="round" />
+        `;
+      } else if (selectedProduct === 'tote') {
+        label.innerText = 'Tote Bag de Lienzo';
+        group.innerHTML = `
+          <!-- Straps -->
+          <path d="M105 130 L105 50 Q150 35 195 50 L195 130" fill="none" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" />
+          <!-- Bag Body -->
+          <rect x="70" y="120" width="160" height="150" rx="4" fill="url(#userPatternFill)" stroke="#1A1A1A" stroke-width="3" />
+          <line x1="70" y1="140" x2="230" y2="140" stroke="#1A1A1A" stroke-width="2" />
+        `;
+      } else if (selectedProduct === 'scarf') {
+        label.innerText = 'Bufanda Textil Tejida';
+        group.innerHTML = `
+          <!-- Scarf Draped Loop -->
+          <path d="M70 70 Q150 120 230 70 Q250 160 190 250 L150 250 Q190 150 120 100 L70 70 Z" 
+                fill="url(#userPatternFill)" stroke="#1A1A1A" stroke-width="3" />
+          <path d="M110 90 Q150 130 190 90 Q210 180 150 260 L110 260 Q160 170 110 90 Z" 
+                fill="url(#userPatternFill)" stroke="#1A1A1A" stroke-width="3" />
+          <!-- Fringe Lines -->
+          <line x1="150" y1="250" x2="150" y2="270" stroke="#1A1A1A" stroke-width="2" />
+          <line x1="160" y1="250" x2="160" y2="270" stroke="#1A1A1A" stroke-width="2" />
+          <line x1="170" y1="250" x2="170" y2="270" stroke="#1A1A1A" stroke-width="2" />
+          <line x1="180" y1="250" x2="180" y2="270" stroke="#1A1A1A" stroke-width="2" />
+        `;
+      }
+    }
+
+    // --- STEP 4: FINAL SHOWCASE & DOWNLOAD ---
+    function renderFinalShowcase() {
+      const sCanvas = document.getElementById('finalShowcaseCanvas');
+      const sCtx = sCanvas.getContext('2d');
+      sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
+
+      // Render repeating pattern on final card background
+      sCtx.drawImage(pCanvas, 0, 0, sCanvas.width, sCanvas.height);
+
+      // Summary label
+      document.getElementById('summaryText').innerText = 
+        `Motivo con ${motifShapes.length} formas · Repetición ${currentPatternMode}`;
+    }
+
+    function downloadPatternTile() {
+      const link = document.createElement('a');
+      link.download = `playhaus-pattern-${Date.now()}.png`;
+      link.href = pCanvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>
