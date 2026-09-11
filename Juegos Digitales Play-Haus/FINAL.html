@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CREA — Play-Haus</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bauhaus: {
+                            black: '#111111',
+                            red: '#D32F2F',
+                            yellow: '#FBC02D',
+                            blue: '#1976D2',
+                            offwhite: '#F7F5F0',
+                            beige: '#EFECE6',
+                            gray: '#9E9E9E',
+                            darkgray: '#333333'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F7F5F0;
+            color: #111111;
+            overscroll-behavior: none;
+            touch-action: none;
+        }
+        .bauhaus-shadow {
+            box-shadow: 4px 4px 0px #111111;
+        }
+        .bauhaus-shadow-sm {
+            box-shadow: 2px 2px 0px #111111;
+        }
+        .bauhaus-border {
+            border: 2px solid #111111;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="h-full w-full overflow-hidden flex flex-col justify-between">
+
+    <div id="app" class="h-full w-full flex flex-col max-w-md mx-auto relative bg-bauhaus-offwhite bauhaus-border overflow-hidden md:max-w-xl lg:max-w-2xl">
+        
+        <!-- HEADER SUPERIOR -->
+        <header class="w-full px-5 py-3.5 border-b-2 border-bauhaus-black flex items-center justify-between bg-bauhaus-offwhite z-20">
+            <div class="flex items-center space-x-2">
+                <div class="w-3.5 h-3.5 bg-bauhaus-red inline-block"></div>
+                <div class="w-3.5 h-3.5 bg-bauhaus-yellow inline-block"></div>
+                <div class="w-3.5 h-3.5 bg-bauhaus-blue inline-block"></div>
+                <span class="font-black tracking-widest text-xs uppercase ml-1">PLAY-HAUS</span>
+            </div>
+            <div id="header-progress" class="text-xs font-bold tracking-wider uppercase hidden">
+                DESAFÍO <span id="current-challenge-num">1</span> / 3
+            </div>
+        </header>
+
+        <!-- CONTENEDOR PRINCIPAL -->
+        <main id="main-viewport" class="flex-1 flex flex-col relative overflow-hidden">
+            <!-- Vistas dinámicas renderizadas vía JS -->
+        </main>
+    </div>
+
+    <script>
+        // Gestión del Estado de la Aplicación
+        const state = {
+            screen: 'intro', // intro, select_challenge, challenge_intro, build, feedback, final, gallery
+            currentChallengeIndex: 0,
+            tutorialSeen: false,
+            challenges: [
+                {
+                    id: 1,
+                    code: '01',
+                    title: "UN ASIENTO",
+                    subtitle: "Crea un lugar donde alguien pueda sentarse.",
+                    hint: "Piensa en la estabilidad, la altura y la superficie de apoyo.",
+                    availablePieces: [
+                        { type: 'rect-v', width: 22, height: 85, label: 'Barra Vertical', defaultColor: '#D32F2F' },
+                        { type: 'rect-h', width: 95, height: 22, label: 'Losa Horizontal', defaultColor: '#111111' },
+                        { type: 'square', width: 55, height: 55, label: 'Bloque Cuadrado', defaultColor: '#1976D2' },
+                        { type: 'circle', width: 65, height: 65, label: 'Asiento Circular', defaultColor: '#FBC02D' },
+                        { type: 'thin-bar', width: 12, height: 100, label: 'Varilla de Soporte', defaultColor: '#333333' }
+                    ]
+                },
+                {
+                    id: 2,
+                    code: '02',
+                    title: "UNA LÁMPARA",
+                    subtitle: "Crea algo que pueda llevar luz a un espacio.",
+                    hint: "Piensa en fuentes de luz, pantallas, soportes y reflectores.",
+                    availablePieces: [
+                        { type: 'semicircle', width: 75, height: 42, label: 'Pantalla', defaultColor: '#FBC02D' },
+                        { type: 'circle', width: 32, height: 32, label: 'Bombilla/Base', defaultColor: '#D32F2F' },
+                        { type: 'rect-v', width: 14, height: 95, label: 'Mástil', defaultColor: '#111111' },
+                        { type: 'triangle', width: 65, height: 55, label: 'Reflector', defaultColor: '#1976D2' },
+                        { type: 'square', width: 45, height: 45, label: 'Bloque Base', defaultColor: '#9E9E9E' }
+                    ]
+                },
+                {
+                    id: 3,
+                    code: '03',
+                    title: "UN OBJETO DE JUEGO",
+                    subtitle: "Crea un objeto que invite a alguien a jugar.",
+                    hint: "Piensa en el equilibrio, el apilamiento, la interacción y el movimiento.",
+                    availablePieces: [
+                        { type: 'triangle', width: 75, height: 75, label: 'Cuña Triángulo', defaultColor: '#D32F2F' },
+                        { type: 'circle', width: 55, height: 55, label: 'Esfera/Disco', defaultColor: '#FBC02D' },
+                        { type: 'l-shape', width: 65, height: 65, label: 'Pieza en L', defaultColor: '#1976D2' },
+                        { type: 'rect-h', width: 85, height: 26, label: 'Viga', defaultColor: '#111111' },
+                        { type: 'square', width: 50, height: 50, label: 'Cubo', defaultColor: '#9E9E9E' }
+                    ]
+                }
+            ],
+            creations: [null, null, null], // Almacena el diseño de cada desafío
+            currentCanvasPieces: [],
+            selectedPieceId: null,
+            showTutorial: true,
+            colors: ['#111111', '#D32F2F', '#FBC02D', '#1976D2', '#EFECE6', '#9E9E9E']
+        };
+
+        // Elementos del DOM
+        const viewport = document.getElementById('main-viewport');
+        const headerProgress = document.getElementById('header-progress');
+        const currentChallengeNum = document.getElementById('current-challenge-num');
+
+        function render() {
+            if (['challenge_intro', 'build', 'feedback'].includes(state.screen)) {
+                headerProgress.classList.remove('hidden');
+                currentChallengeNum.textContent = state.currentChallengeIndex + 1;
+            } else {
+                headerProgress.classList.add('hidden');
+            }
+
+            viewport.innerHTML = '';
+
+            switch (state.screen) {
+                case 'intro':
+                    renderIntroScreen();
+                    break;
+                case 'select_challenge':
+                    renderSelectChallengeScreen();
+                    break;
+                case 'challenge_intro':
+                    renderChallengeIntroScreen();
+                    break;
+                case 'build':
+                    renderBuildScreen();
+                    break;
+                case 'feedback':
+                    renderFeedbackScreen();
+                    break;
+                case 'final':
+                    renderFinalScreen();
+                    break;
+                case 'gallery':
+                    renderGalleryScreen();
+                    break;
+            }
+        }
+
+        function renderIntroScreen() {
+            viewport.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between p-6 sm:p-8 animate-fade-in">
+                    <div class="space-y-6 mt-2">
+                        <div class="inline-block px-3 py-1 bg-bauhaus-black text-bauhaus-offwhite text-xs font-bold uppercase tracking-widest bauhaus-shadow-sm">
+                            PLAY-HAUS EDICIÓN FINAL
+                        </div>
+                        <div>
+                            <h1 class="text-4xl sm:text-6xl font-black tracking-tighter uppercase leading-none">
+                                CREA
+                            </h1>
+                            <p class="text-lg sm:text-xl font-medium text-bauhaus-darkgray mt-2">
+                                Ahora tú diseñas.
+                            </p>
+                        </div>
+                        <p class="text-sm sm:text-base text-bauhaus-darkgray leading-relaxed">
+                            Aplica lo que descubriste en los talleres para crear un objeto que responda a un problema. Sin soluciones únicas. Pura experimentación.
+                        </p>
+                    </div>
+
+                    <div class="my-6 py-4 border-t-2 border-b-2 border-bauhaus-black flex justify-around items-center bg-white/40">
+                        <div class="text-center">
+                            <div class="text-[10px] font-bold uppercase text-bauhaus-gray">PASO 1</div>
+                            <div class="font-extrabold text-xs sm:text-sm uppercase mt-0.5">PROBLEMA</div>
+                        </div>
+                        <div class="text-base font-bold text-bauhaus-black">→</div>
+                        <div class="text-center">
+                            <div class="text-[10px] font-bold uppercase text-bauhaus-gray">PASO 2</div>
+                            <div class="font-extrabold text-xs sm:text-sm uppercase mt-0.5">IDEA</div>
+                        </div>
+                        <div class="text-base font-bold text-bauhaus-black">→</div>
+                        <div class="text-center">
+                            <div class="text-[10px] font-bold uppercase text-bauhaus-gray">PASO 3</div>
+                            <div class="font-extrabold text-xs sm:text-sm uppercase mt-0.5">CONSTRUYE</div>
+                        </div>
+                        <div class="text-base font-bold text-bauhaus-black">→</div>
+                        <div class="text-center">
+                            <div class="text-[10px] font-bold uppercase text-bauhaus-gray">PASO 4</div>
+                            <div class="font-extrabold text-xs sm:text-sm uppercase mt-0.5">CREA</div>
+                        </div>
+                    </div>
+
+                    <button onclick="startJourney()" class="w-full py-4 bg-bauhaus-red text-bauhaus-offwhite font-bold text-lg uppercase tracking-wider bauhaus-shadow hover:bg-red-700 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all cursor-pointer">
+                        EMPEZAR
+                    </button>
+                </div>
+            `;
+        }
+
+        function startJourney() {
+            state.screen = 'select_challenge';
+            render();
+        }
+
+        function renderSelectChallengeScreen() {
+            const challenges = state.challenges;
+            let html = `
+                <div class="flex-1 flex flex-col p-5 sm:p-8 overflow-y-auto animate-fade-in">
+                    <div class="mb-5">
+                        <h2 class="text-2xl sm:text-3xl font-black uppercase tracking-tight">ELIGE UN DESAFÍO</h2>
+                        <p class="text-xs sm:text-sm text-bauhaus-darkgray mt-1">Selecciona un problema de diseño a resolver.</p>
+                    </div>
+                    <div class="space-y-4 flex-1">
+            `;
+
+            challenges.forEach((ch, idx) => {
+                const isCompleted = state.creations[idx] !== null;
+                html += `
+                    <div class="bauhaus-border p-5 bg-white bauhaus-shadow-sm flex flex-col justify-between relative hover:translate-x-1 transition-transform">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 bg-bauhaus-black text-bauhaus-offwhite uppercase tracking-wider">DESAFÍO ${ch.code}</span>
+                            ${isCompleted ? '<span class="text-[10px] font-bold px-2 py-0.5 bg-bauhaus-yellow text-bauhaus-black uppercase tracking-wider">COMPLETADO ✓</span>' : ''}
+                        </div>
+                        <h3 class="text-xl font-black uppercase tracking-wide mb-1">${ch.title}</h3>
+                        <p class="text-xs sm:text-sm text-bauhaus-darkgray italic mb-4">"${ch.subtitle}"</p>
+                        <button onclick="selectChallenge(${idx})" class="w-full py-3 bg-bauhaus-black text-bauhaus-offwhite font-bold text-xs uppercase tracking-wider bauhaus-shadow-sm hover:bg-bauhaus-darkgray active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer">
+                            ${isCompleted ? 'EDITAR DISEÑO' : 'COMENZAR DESAFÍO'}
+                        </button>
+                    </div>
+                `;
+            });
+
+            if (state.creations.every(c => c !== null)) {
+                html += `
+                    <div class="mt-4 pt-2">
+                        <button onclick="goToFinalScreen()" class="w-full py-4 bg-bauhaus-blue text-bauhaus-offwhite font-bold text-sm uppercase tracking-wider bauhaus-shadow hover:bg-blue-700 transition-all cursor-pointer">
+                            VER EXPOSICIÓN FINAL →
+                        </button>
+                    </div>
+                `;
+            }
+
+            html += `</div></div>`;
+            viewport.innerHTML = html;
+        }
+
+        function selectChallenge(index) {
+            state.currentChallengeIndex = index;
+            if (state.creations[index]) {
+                state.currentCanvasPieces = JSON.parse(JSON.stringify(state.creations[index]));
+            } else {
+                state.currentCanvasPieces = [];
+            }
+            state.selectedPieceId = null;
+            state.screen = 'challenge_intro';
+            render();
+        }
+
+        function renderChallengeIntroScreen() {
+            const ch = state.challenges[state.currentChallengeIndex];
+            viewport.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between p-6 sm:p-10 text-center animate-fade-in">
+                    <div class="my-auto space-y-6">
+                        <span class="text-xs font-bold tracking-widest text-bauhaus-gray uppercase">DESAFÍO ${state.currentChallengeIndex + 1} / 3</span>
+                        <h2 class="text-3xl sm:text-5xl font-black uppercase tracking-tight">${ch.title}</h2>
+                        <div class="p-6 bauhaus-border bg-white bauhaus-shadow max-w-md mx-auto">
+                            <p class="text-base sm:text-lg font-semibold text-bauhaus-black italic">"${ch.subtitle}"</p>
+                            <p class="text-xs text-bauhaus-gray mt-4 uppercase tracking-wider font-medium">${ch.hint}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="enterBuildScreen()" class="w-full py-4 bg-bauhaus-red text-bauhaus-offwhite font-bold text-base uppercase tracking-wider bauhaus-shadow hover:bg-red-700 active:translate-x-1 active:translate-y-1 transition-all cursor-pointer">
+                            CONSTRUIR
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function enterBuildScreen() {
+            state.screen = 'build';
+            render();
+        }
+
+        function renderBuildScreen() {
+            const ch = state.challenges[state.currentChallengeIndex];
+            
+            viewport.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between overflow-hidden relative">
+                    <!-- Barra de Información Superior -->
+                    <div class="px-4 py-2 border-b-2 border-bauhaus-black bg-white flex justify-between items-center z-10">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-bauhaus-gray">DESAFÍO ${state.currentChallengeIndex + 1}/3</span>
+                            <h2 class="text-sm font-black uppercase leading-none">${ch.title}</h2>
+                        </div>
+                        <button onclick="submitDesign()" class="px-3 py-2 bg-bauhaus-black text-bauhaus-offwhite font-bold text-xs uppercase tracking-wider bauhaus-shadow-sm hover:bg-bauhaus-darkgray cursor-pointer">
+                            LISTO ✓
+                        </button>
+                    </div>
+
+                    <!-- Lienzo de Diseño (Canvas) -->
+                    <div id="design-canvas" class="flex-1 bg-bauhaus-offwhite relative overflow-hidden border-b-2 border-bauhaus-black touch-none" style="background-image: radial-gradient(#9E9E9E 1.2px, transparent 1.2px); background-size: 24px 24px;">
+                        <!-- Piezas renderizadas -->
+                        <div id="canvas-pieces-container" class="absolute inset-0 w-full h-full"></div>
+                        
+                        <!-- Mensaje de Lienzo Vacío -->
+                        <div id="canvas-empty-prompt" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-6 text-center ${state.currentCanvasPieces.length > 0 ? 'hidden' : ''}">
+                            <div class="w-10 h-10 bauhaus-border bg-white flex items-center justify-center mb-2 bauhaus-shadow-sm text-lg font-bold">+</div>
+                            <p class="text-xs font-bold uppercase tracking-wider text-bauhaus-gray max-w-xs">Toca las piezas de abajo para agregarlas a tu lienzo</p>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Controles de Pieza Seleccionada -->
+                    <div id="selected-controls" class="bg-white border-b-2 border-bauhaus-black px-3 py-2 flex items-center justify-between ${state.selectedPieceId ? '' : 'hidden'}">
+                        <div class="text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1.5">
+                            <span class="hidden sm:inline">PIEZA:</span>
+                            <div id="selected-color-indicator" class="w-4 h-4 bauhaus-border inline-block"></div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="rotateSelectedPiece()" class="px-2.5 py-1 bg-bauhaus-yellow text-bauhaus-black font-bold text-xs uppercase bauhaus-shadow-sm active:translate-y-0.5 cursor-pointer">
+                                ↻ ROTAR
+                            </button>
+                            <div class="flex space-x-1 bg-bauhaus-beige p-1 bauhaus-border" id="color-picker-palette">
+                                <!-- Colores inyectados dinámicamente -->
+                            </div>
+                            <button onclick="deleteSelectedPiece()" class="px-2.5 py-1 bg-bauhaus-red text-bauhaus-offwhite font-bold text-xs uppercase bauhaus-shadow-sm active:translate-y-0.5 cursor-pointer">
+                                × ELIMINAR
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Piezas Disponibles -->
+                    <div class="bg-white p-2.5 border-t-2 border-bauhaus-black">
+                        <div class="text-[10px] font-bold uppercase tracking-wider mb-1.5 text-bauhaus-gray flex justify-between items-center">
+                            <span>PIEZAS DISPONIBLES</span>
+                            <span>TOCA PARA AÑADIR</span>
+                        </div>
+                        <div class="flex space-x-3 overflow-x-auto no-scrollbar py-1 px-1">
+                            ${ch.availablePieces.map((p) => `
+                                <button onclick="addPieceToCanvas('${p.type}', '${p.defaultColor}', ${p.width}, ${p.height})" class="flex-shrink-0 w-14 h-14 bauhaus-border bg-bauhaus-offwhite flex items-center justify-center bauhaus-shadow-sm hover:bg-bauhaus-beige active:translate-y-0.5 transition-all cursor-pointer relative">
+                                    <div style="width: ${Math.min(p.width * 0.45, 36)}px; height: ${Math.min(p.height * 0.45, 36)}px; background-color: ${p.defaultColor}; border: 1.5px solid #111111; border-radius: ${p.type === 'circle' ? '50%' : '0'};"></div>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal de Tutorial -->
+                ${state.showTutorial ? `
+                    <div id="tutorial-modal" class="absolute inset-0 bg-bauhaus-black/60 z-50 flex items-center justify-center p-5">
+                        <div class="bg-white bauhaus-border p-6 max-w-sm w-full bauhaus-shadow text-center space-y-4 animate-fade-in">
+                            <div class="inline-block px-3 py-1 bg-bauhaus-yellow text-bauhaus-black text-[10px] font-bold uppercase tracking-widest bauhaus-shadow-sm">
+                                GUÍA RÁPIDA
+                            </div>
+                            <h3 class="text-xl font-black uppercase">CÓMO DISEÑAR</h3>
+                            <div class="text-xs text-bauhaus-darkgray space-y-2 text-left bg-bauhaus-offwhite p-3.5 bauhaus-border leading-relaxed">
+                                <p><strong>1. TOCA</strong> una pieza del menú inferior para agregarla.</p>
+                                <p><strong>2. ARRASTRA</strong> las piezas para ubicarlas en el lienzo.</p>
+                                <p><strong>3. TOCA</strong> una pieza colocada para rotar, cambiar color o borrar.</p>
+                                <p><strong>4. COMBINA</strong> las formas para dar respuesta al desafío.</p>
+                            </div>
+                            <button onclick="closeTutorial()" class="w-full py-3 bg-bauhaus-black text-bauhaus-offwhite font-bold text-xs uppercase tracking-wider bauhaus-shadow-sm hover:bg-bauhaus-darkgray cursor-pointer">
+                                COMPRENDIDO, ¡A CONSTRUIR!
+                            </button>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+
+            renderCanvasPieces();
+            renderColorPickerPalette();
+        }
+
+        function closeTutorial() {
+            state.showTutorial = false;
+            renderBuildScreen();
+        }
+
+        function addPieceToCanvas(type, color, w, h) {
+            const canvasEl = document.getElementById('design-canvas');
+            const rect = canvasEl ? canvasEl.getBoundingClientRect() : { width: 350, height: 400 };
+            
+            const newPiece = {
+                id: 'piece_' + Date.now() + Math.floor(Math.random() * 1000),
+                type: type,
+                color: color,
+                width: w,
+                height: h,
+                x: Math.max(20, rect.width / 2 - w / 2 + (Math.random() * 30 - 15)),
+                y: Math.max(20, rect.height / 2 - h / 2 + (Math.random() * 30 - 15)),
+                rotation: 0
+            };
+
+            state.currentCanvasPieces.push(newPiece);
+            state.selectedPieceId = newPiece.id;
+            renderBuildScreen();
+        }
+
+        function renderCanvasPieces() {
+            const container = document.getElementById('canvas-pieces-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            state.currentCanvasPieces.forEach(p => {
+                const isSelected = p.id === state.selectedPieceId;
+                const el = document.createElement('div');
+                el.id = p.id;
+                el.className = `absolute cursor-move select-none ${isSelected ? 'ring-2 ring-bauhaus-red ring-offset-2 z-30' : 'z-10'}`;
+                el.style.left = `${p.x}px`;
+                el.style.top = `${p.y}px`;
+                el.style.width = `${p.width}px`;
+                el.style.height = `${p.height}px`;
+                el.style.transform = `rotate(${p.rotation}deg)`;
+                
+                let shapeStyle = `width: 100%; height: 100%; background-color: ${p.color}; border: 2px solid #111111;`;
+                if (p.type === 'circle' || p.type === 'semicircle') {
+                    shapeStyle += ' border-radius: 50%;';
+                }
+                if (p.type === 'triangle') {
+                    shapeStyle = `width: 0; height: 0; border-left: ${p.width/2}px solid transparent; border-right: ${p.width/2}px solid transparent; border-bottom: ${p.height}px solid ${p.color}; position: relative; filter: drop-shadow(0px 0px 1px #111111);`;
+                }
+
+                el.innerHTML = `<div style="${shapeStyle}"></div>`;
+
+                setupPieceInteraction(el, p);
+                container.appendChild(el);
+            });
+
+            const emptyPrompt = document.getElementById('canvas-empty-prompt');
+            if (emptyPrompt) {
+                if (state.currentCanvasPieces.length > 0) {
+                    emptyPrompt.classList.add('hidden');
+                } else {
+                    emptyPrompt.classList.remove('hidden');
+                }
+            }
+        }
+
+        function renderColorPickerPalette() {
+            const paletteContainer = document.getElementById('color-picker-palette');
+            if (!paletteContainer) return;
+            paletteContainer.innerHTML = '';
+
+            state.colors.forEach(col => {
+                const btn = document.createElement('button');
+                btn.className = `w-4 h-4 bauhaus-border cursor-pointer transition-transform hover:scale-110`;
+                btn.style.backgroundColor = col;
+                btn.onclick = () => changeSelectedPieceColor(col);
+                paletteContainer.appendChild(btn);
+            });
+
+            const selectedPiece = state.currentCanvasPieces.find(p => p.id === state.selectedPieceId);
+            const indicator = document.getElementById('selected-color-indicator');
+            if (selectedPiece && indicator) {
+                indicator.style.backgroundColor = selectedPiece.color;
+            }
+        }
+
+        function changeSelectedPieceColor(color) {
+            if (!state.selectedPieceId) return;
+            const p = state.currentCanvasPieces.find(item => item.id === state.selectedPieceId);
+            if (p) {
+                p.color = color;
+                renderCanvasPieces();
+                renderColorPickerPalette();
+            }
+        }
+
+        function rotateSelectedPiece() {
+            if (!state.selectedPieceId) return;
+            const p = state.currentCanvasPieces.find(item => item.id === state.selectedPieceId);
+            if (p) {
+                p.rotation = (p.rotation + 45) % 360;
+                renderCanvasPieces();
+            }
+        }
+
+        function deleteSelectedPiece() {
+            if (!state.selectedPieceId) return;
+            state.currentCanvasPieces = state.currentCanvasPieces.filter(item => item.id !== state.selectedPieceId);
+            state.selectedPieceId = null;
+            renderBuildScreen();
+        }
+
+        // Handling pointer events for Mobile/Desktop smooth dragging
+        function setupPieceInteraction(el, piece) {
+            let isDragging = false;
+            let startX, startY;
+            let initialPieceX, initialPieceY;
+
+            el.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                if (state.selectedPieceId !== piece.id) {
+                    state.selectedPieceId = piece.id;
+                    renderBuildScreen();
+                }
+
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialPieceX = piece.x;
+                initialPieceY = piece.y;
+
+                el.setPointerCapture(e.pointerId);
+            });
+
+            el.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                piece.x = initialPieceX + dx;
+                piece.y = initialPieceY + dy;
+
+                el.style.left = `${piece.x}px`;
+                el.style.top = `${piece.y}px`;
+            });
+
+            el.addEventListener('pointerup', (e) => {
+                isDragging = false;
+                try {
+                    el.releasePointerCapture(e.pointerId);
+                } catch (err) {}
+            });
+
+            el.addEventListener('pointercancel', () => {
+                isDragging = false;
+            });
+        }
+
+        // Deselect when touching empty canvas space
+        document.addEventListener('pointerdown', (e) => {
+            if (state.screen === 'build') {
+                const canvas = document.getElementById('design-canvas');
+                if (canvas && e.target === canvas) {
+                    state.selectedPieceId = null;
+                    renderBuildScreen();
+                }
+            }
+        });
+
+        function submitDesign() {
+            if (state.currentCanvasPieces.length < 2) {
+                showSimpleMessage("¡Añade al menos 2 piezas para construir tu diseño!");
+                return;
+            }
+
+            state.creations[state.currentChallengeIndex] = JSON.parse(JSON.stringify(state.currentCanvasPieces));
+            state.screen = 'feedback';
+            render();
+        }
+
+        function showSimpleMessage(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'absolute top-14 left-1/2 -translate-x-1/2 bg-bauhaus-black text-bauhaus-offwhite px-4 py-2 text-xs font-bold uppercase tracking-wider bauhaus-shadow z-50 animate-fade-in text-center max-w-xs';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        function renderFeedbackScreen() {
+            const ch = state.challenges[state.currentChallengeIndex];
+            const messages = [
+                { title: "¡BUENA IDEA!", body: "Creaste una solución utilizando forma, estructura y función." },
+                { title: "¡GRAN PENSAMIENTO!", body: "El diseño consiste en encontrar distintas formas de resolver un problema." },
+                { title: "¡EXCELENTE VISIÓN!", body: "Exploraste el equilibrio, la forma y la expresión de manera exitosa." }
+            ];
+            const feedbackMsg = messages[state.currentChallengeIndex % messages.length];
+
+            viewport.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between p-6 sm:p-10 text-center animate-fade-in">
+                    <div class="my-auto space-y-6">
+                        <div class="inline-block px-3 py-1 bg-bauhaus-yellow text-bauhaus-black text-xs font-bold uppercase tracking-widest bauhaus-shadow-sm">
+                            DESAFÍO RESUELTO
+                        </div>
+                        <h2 class="text-3xl sm:text-5xl font-black uppercase tracking-tight">${feedbackMsg.title}</h2>
+                        <div class="p-6 bauhaus-border bg-white bauhaus-shadow max-w-md mx-auto">
+                            <p class="text-sm sm:text-base font-medium text-bauhaus-darkgray leading-relaxed">${feedbackMsg.body}</p>
+                            <p class="text-xs text-bauhaus-gray mt-4 uppercase font-bold tracking-wider">Desafío: ${ch.title}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="nextChallengeFlow()" class="w-full py-4 bg-bauhaus-blue text-bauhaus-offwhite font-bold text-base uppercase tracking-wider bauhaus-shadow hover:bg-blue-700 active:translate-x-1 active:translate-y-1 transition-all cursor-pointer">
+                            ${state.currentChallengeIndex < 2 ? 'SIGUIENTE DESAFÍO →' : 'VER EXPOSICIÓN FINAL →'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function nextChallengeFlow() {
+            if (state.currentChallengeIndex < 2) {
+                state.currentChallengeIndex++;
+                if (state.creations[state.currentChallengeIndex]) {
+                    state.currentCanvasPieces = JSON.parse(JSON.stringify(state.creations[state.currentChallengeIndex]));
+                } else {
+                    state.currentCanvasPieces = [];
+                }
+                state.selectedPieceId = null;
+                state.screen = 'challenge_intro';
+                render();
+            } else {
+                state.screen = 'final';
+                render();
+            }
+        }
+
+        function renderFinalScreen() {
+            viewport.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between p-6 sm:p-10 overflow-y-auto animate-fade-in">
+                    <div class="space-y-4 my-auto text-center">
+                        <div class="inline-block px-3 py-1 bg-bauhaus-red text-bauhaus-offwhite text-xs font-bold uppercase tracking-widest bauhaus-shadow-sm">
+                            ✦ TÚ LO CREASTE
+                        </div>
+                        <h2 class="text-3xl sm:text-5xl font-black uppercase tracking-tight">EXPOSICIÓN COMPLETA</h2>
+                        <p class="text-xs sm:text-sm text-bauhaus-darkgray leading-relaxed max-w-md mx-auto">
+                            Exploraste forma, función, estructura y movimiento para crear tus propias soluciones. Hay más de una manera de diseñar.
+                        </p>
+                        <div class="p-4 bauhaus-border bg-white bauhaus-shadow max-w-sm mx-auto">
+                            <p class="text-xs font-black uppercase tracking-wider text-bauhaus-black">AHORA TÚ DISEÑAS.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 mt-6">
+                        <button onclick="goToGallery()" class="w-full py-4 bg-bauhaus-black text-bauhaus-offwhite font-bold text-sm uppercase tracking-wider bauhaus-shadow hover:bg-bauhaus-darkgray transition-all cursor-pointer">
+                            VER MIS CREACIONES
+                        </button>
+                        <button onclick="resetGame()" class="w-full py-3 bg-bauhaus-beige text-bauhaus-black bauhaus-border font-bold text-xs uppercase tracking-wider hover:bg-bauhaus-gray/20 transition-all cursor-pointer">
+                            VOLVER A JUGAR
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function goToFinalScreen() {
+            state.screen = 'final';
+            render();
+        }
+
+        function resetGame() {
+            state.screen = 'intro';
+            state.currentChallengeIndex = 0;
+            state.creations = [null, null, null];
+            state.currentCanvasPieces = [];
+            state.showTutorial = true;
+            render();
+        }
+
+        function renderGalleryScreen() {
+            viewport.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between p-5 sm:p-8 overflow-y-auto animate-fade-in">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h2 class="text-2xl font-black uppercase tracking-tight">MIS CREACIONES</h2>
+                            <button onclick="goToFinalScreen()" class="text-xs font-bold uppercase underline cursor-pointer">← VOLVER</button>
+                        </div>
+                        <p class="text-xs text-bauhaus-darkgray mb-5 uppercase tracking-wider">Tu colección personal de diseño Play-Haus.</p>
+                    </div>
+
+                    <div class="space-y-5 flex-1">
+                        ${state.challenges.map((ch, idx) => `
+                            <div class="bauhaus-border bg-white p-3.5 bauhaus-shadow-sm flex flex-col">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[10px] font-bold uppercase bg-bauhaus-black text-bauhaus-offwhite px-2 py-0.5">${ch.title}</span>
+                                    <button onclick="downloadCreationPNG(${idx})" class="text-[10px] font-bold uppercase px-2 py-1 bg-bauhaus-yellow text-bauhaus-black bauhaus-shadow-sm hover:bg-yellow-400 cursor-pointer">
+                                        GUARDAR PNG ↓
+                                    </button>
+                                </div>
+                                <div id="preview-mini-canvas-${idx}" class="w-full h-36 bg-bauhaus-offwhite bauhaus-border relative overflow-hidden" style="background-image: radial-gradient(#9E9E9E 1px, transparent 1px); background-size: 18px 18px;">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="mt-5">
+                        <button onclick="resetGame()" class="w-full py-3.5 bg-bauhaus-red text-bauhaus-offwhite font-bold text-xs uppercase tracking-wider bauhaus-shadow hover:bg-red-700 cursor-pointer">
+                            VOLVER A JUGAR
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Mini previsualización
+            setTimeout(() => {
+                state.challenges.forEach((ch, idx) => {
+                    const container = document.getElementById(`preview-mini-canvas-${idx}`);
+                    if (!container) return;
+                    const pieces = state.creations[idx] || [];
+                    
+                    pieces.forEach(p => {
+                        const el = document.createElement('div');
+                        el.className = 'absolute';
+                        el.style.left = `${p.x * 0.65}px`;
+                        el.style.top = `${p.y * 0.65}px`;
+                        el.style.width = `${p.width * 0.65}px`;
+                        el.style.height = `${p.height * 0.65}px`;
+                        el.style.transform = `rotate(${p.rotation}deg)`;
+                        
+                        let shapeStyle = `width: 100%; height: 100%; background-color: ${p.color}; border: 1px solid #111111;`;
+                        if (p.type === 'circle' || p.type === 'semicircle') {
+                            shapeStyle += ' border-radius: 50%;';
+                        }
+                        if (p.type === 'triangle') {
+                            shapeStyle = `width: 0; height: 0; border-left: ${(p.width*0.65)/2}px solid transparent; border-right: ${(p.width*0.65)/2}px solid transparent; border-bottom: ${p.height*0.65}px solid ${p.color};`;
+                        }
+                        el.innerHTML = `<div style="${shapeStyle}"></div>`;
+                        container.appendChild(el);
+                    });
+                });
+            }, 50);
+        }
+
+        function goToGallery() {
+            state.screen = 'gallery';
+            render();
+        }
+
+        function downloadCreationPNG(index) {
+            const ch = state.challenges[index];
+            const pieces = state.creations[index];
+            if (!pieces || pieces.length === 0) {
+                showSimpleMessage("No hay un diseño guardado para este desafío aún.");
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+
+            // Fondo
+            ctx.fillStyle = '#F7F5F0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Rejilla de puntos
+            ctx.fillStyle = '#9E9E9E';
+            for (let x = 0; x < canvas.width; x += 24) {
+                for (let y = 0; y < canvas.height; y += 24) {
+                    ctx.fillRect(x, y, 1.5, 1.5);
+                }
+            }
+
+            // Marco del lienzo
+            ctx.strokeStyle = '#111111';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+
+            // Título
+            ctx.fillStyle = '#111111';
+            ctx.font = 'bold 18px Inter, sans-serif';
+            ctx.fillText(`PLAY-HAUS — ${ch.title}`, 30, 48);
+
+            // Piezas
+            pieces.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x * 1.4 + 40, p.y * 1.4 + 70);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+
+                ctx.fillStyle = p.color;
+                ctx.strokeStyle = '#111111';
+                ctx.lineWidth = 2.5;
+
+                const w = p.width * 1.2;
+                const h = p.height * 1.2;
+
+                if (p.type === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(w/2, h/2, w/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                } else if (p.type === 'triangle') {
+                    ctx.beginPath();
+                    ctx.moveTo(w/2, 0);
+                    ctx.lineTo(w, h);
+                    ctx.lineTo(0, h);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                } else {
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.strokeRect(0, 0, w, h);
+                }
+
+                ctx.restore();
+            });
+
+            // Descarga de archivo
+            const link = document.createElement('a');
+            link.download = `play-haus-${ch.title.toLowerCase().replace(/\s+/g, '-')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showSimpleMessage("¡Creación descargada como PNG!");
+        }
+
+        // Inicialización en carga
+        window.onload = function() {
+            render();
+        };
+    </script>
+</body>
+</html>
